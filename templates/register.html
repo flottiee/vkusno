@@ -23,15 +23,6 @@
             {% endfor %}
         </p>
         <p>
-            {{ form.email.label }}<br>
-            {{ form.email(class="form-control", type="email") }}<br>
-            {% for error in form.email.errors %}
-                <div class="alert alert-danger" role="alert">
-                    {{ error }}
-                </div>
-            {% endfor %}
-        </p>
-        <p>
             {{ form.password.label }}<br>
             {{ form.password(class="form-control", type="password") }}<br>
             {% for error in form.password.errors %}
@@ -50,9 +41,18 @@
             {% endfor %}
         </p>
         <p>
-            {{ form.speciality.label }}<br>
-            {{ form.speciality(class="form-control", type="text") }}<br>
-            {% for error in form.speciality.errors %}
+            {{ form.email.label }}<br>
+            {{ form.email(class="form-control", type="email") }}<br>
+            {% for error in form.email.errors %}
+                <div class="alert alert-danger" role="alert">
+                    {{ error }}
+                </div>
+            {% endfor %}
+        </p>
+        <p>
+            {{ form.phone.label }}<br>
+            {{ form.phone(class="form-control", type="tel") }}<br>
+            {% for error in form.phone.errors %}
                 <div class="alert alert-danger" role="alert">
                     {{ error }}
                 </div>
