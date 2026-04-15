@@ -1,12 +1,19 @@
+from dotenv import load_dotenv
+import os
+
 from flask import Blueprint, render_template, redirect
 from flask_login import login_user
 
 from app.forms.login_form import LoginForm
-from instance.data_db import db_session
+from app.forms.worker_form import WorkerCheckPassForm
 from app.forms.register_form import RegisterForm
+
+from instance.data_db import db_session
 from app.models.users import User
 
 auth_blueprint = Blueprint('auth', __name__, url_prefix='/auth')
+
+load_dotenv()
 
 @auth_blueprint.route('/register', methods=['GET', 'POST'])
 def register():
@@ -27,7 +34,7 @@ def register():
         db_sess.add(user)
         db_sess.commit()
         return redirect('/')
-    return render_template('register.html', form=form)
+    return render_template('register.html', title='Регистрация', form=form)
 
 
 @auth_blueprint.route('/login', methods=['GET', 'POST'])
@@ -43,3 +50,27 @@ def login():
                                message="Неправильный логин или пароль",
                                form=form)
     return render_template('login.html', title='Авторизация', form=form)
+
+
+@auth_blueprint.route('/worker/check_password', methods=['GET', 'POST'])
+def check_password():
+    form  = WorkerCheckPassForm()
+    if form.validate_on_submit():
+        if form.password.data == os.getenv('CHEF_KEY'):
+            print('you chef')
+            # return redirect('/chef')
+        elif form.password.data == os.getenv('ADMIN_KEY'):
+            print('you admin')
+            # return redirect('/admin')
+        elif form.password.data == os.getenv('COURIER_KEY'):
+            print('you courier')
+            # return redirect('/courier')
+        elif form.password.data == os.getenv('PROGRAMMER_KEY'):
+            print('you programmer')
+            # return redirect('/programmer')
+        else:
+            return render_template('worker_checkPass.html',
+                                   title='Проверка на работника',
+                                   form=form,
+                                   message='Неверный пароль')
+    return render_template('worker_checkPass.html', title='Проверка на работника', form=form)
