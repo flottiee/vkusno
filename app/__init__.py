@@ -10,6 +10,7 @@ from app.models.users import User
 
 from app.routes.auth import auth_blueprint
 from app.routes.index import index_blueprint
+from app.routes.menu import menu_blueprint
 
 
 def create_app():
@@ -29,5 +30,6 @@ def create_app():
 
     app.register_blueprint(index_blueprint)
     app.register_blueprint(auth_blueprint)
+    app.register_blueprint(menu_blueprint)
 
     return app

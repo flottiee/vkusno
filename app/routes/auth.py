@@ -6,7 +6,7 @@ from instance.data_db import db_session
 from app.forms.register_form import RegisterForm
 from app.models.users import User
 
-auth_blueprint = Blueprint('auth', __name__, url_prefix='/auth')
+auth_blueprint = Blueprint('auth', __name__, url_prefix='/auth', template_folder='../../templates')
 
 @auth_blueprint.route('/register', methods=['GET', 'POST'])
 def register():

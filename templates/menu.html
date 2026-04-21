@@ -2,5 +2,17 @@
 
 {% block content %}
     <h1>Меню</h1>
-    
+    {% for categ in all_categories_with_dishes %}
+        <h2>{{categ.name}}</h2>
+        <div class="cards-grid">
+            {% for dish in categ.menu_items %}
+                <div class="card">
+                    <img src="{{ url_for('static', filename='images/' + dish.image_url) }}" alt="{{ dish.name }}">
+                    <p>{{ dish.description }}</p>
+                    <p>{{ dish.is_available }}</p>
+                    <p>{{ "{:.2f}".format(dish.price) }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
 {% endblock %}
