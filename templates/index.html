@@ -2,194 +2,141 @@
 
 {% block content %}
 <style>
-    /* Анимация трансформации */
-    .job-container {
-        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow: hidden;
-        max-width: 250px; /* Размер как у кнопки */
-        max-height: 50px;
-        border-radius: 8px;
+    /* Локальный стиль для анимации трансформации */
+    .transform-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 300px;
+        height: 60px;
+        transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        margin: 0 auto;
     }
 
-    .job-container.expanded {
-        max-width: 100%; /* Расширяется на всю карточку */
-        max-height: 800px; /* С запасом для формы */
-        background-color: #f8fff9;
-        border: 2px solid #198754;
-        padding: 20px;
+    .transform-wrapper.active {
+        max-width: 100%;
+        height: 550px;
     }
 
-    .form-content {
+    .form-inner {
         opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.3s ease;
+        pointer-events: none;
+        transition: opacity 0.4s ease;
     }
 
-    .job-container.expanded .form-content {
+    .active .form-inner {
         opacity: 1;
-        visibility: visible;
+        pointer-events: auto;
     }
 
-    .btn-transform {
-        transition: opacity 0.3s ease;
-    }
-
-    .job-container.expanded .btn-transform {
+    .active .btn-trigger {
         display: none;
     }
 </style>
 
-<div class="container mt-5">
+<div class="container py-4">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow border-0 mb-4">
-                <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0 d-flex align-items-center">
-                        <i class="bi bi-person-circle me-2"></i> Профиль пользователя
-                    </h4>
+        <div class="col-lg-8">
+            
+            <div class="glass-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="fw-800 m-0">Мой кабинет</h2>
                     {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm px-3 shadow-sm" 
-                        style="border-width: 2px; font-weight: bold;">
-                            <i class="bi bi-box-arrow-right"></i> Выйти
-                        </a>
+                        <a href="{{ url_for('logout') }}" class="btn btn-outline-danger rounded-pill fw-bold px-4">Выйти</a>
                     {% endif %}
                 </div>
-                <div class="card-body p-4">
-                    {% if current_user.is_authenticated %}
-                        <div class="row mb-3">
-                            <div class="col-sm-4 text-muted uppercase small fw-bold">ФИО</div>
-                            <div class="col-sm-8 text-dark">{{ current_user.name }} {{ current_user.surname }}</div>
-                        </div>
-                        <div class="row mb-4">
-                            <div class="col-sm-4 text-muted uppercase small fw-bold">Текущий статус</div>
-                            <div class="col-sm-8">
-                                <span class="badge rounded-pill {% if current_user.speciality == 'admin' %}bg-danger{% else %}bg-primary{% endif %}">
-                                    {{ current_user.speciality }}
-                                </span>
-                            </div>
-                        </div>
 
-                        {% if current_user.speciality == 'customer' %}
-                            <div id="jobWrapper" class="job-container mx-auto border d-flex align-items-center justify-content-center">
-                                
-                                <button id="startBtn" class="btn btn-success btn-transform px-4" onclick="expandForm()">
-                                    Устроиться на работу
-                                </button>
-
-                                <div class="form-content w-100">
-                                    <div class="d-flex justify-content-between align-items-center mb-4">
-                                        <h4 class="text-success mb-0">Анкета сотрудника</h4>
-                                        <button type="button" class="btn-close" onclick="collapseForm()"></button>
-                                    </div>
-                                    
-                                    <form action="{{ url_for('apply_role') }}" method="post" enctype="multipart/form-data">
-                                        <div class="mb-3">
-                                            <label class="form-label fw-bold">Кем вы хотите быть?</label>
-                                            <div class="btn-group w-100" role="group">
-                                                <input type="radio" class="btn-check" name="role" id="role1" value="worker" checked>
-                                                <label class="btn btn-outline-success" for="role1">Доставщик</label>
-                                                
-                                                <input type="radio" class="btn-check" name="role" id="role2" value="cook">
-                                                <label class="btn btn-outline-success" for="role2">Повар</label>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="mb-3">
-                                            <label class="form-label fw-bold">Опыт работы и навыки</label>
-                                            <textarea name="resume_text" class="form-control shadow-sm" rows="4" placeholder="Напишите немного о себе..." required></textarea>
-                                        </div>
-                                        
-                                        <div class="mb-4">
-                                            <label class="form-label fw-bold">Файл резюме (PDF/DOC)</label>
-                                            <input type="file" name="resume_file" class="form-control" required>
-                                        </div>
-                                        
-                                        <button type="submit" class="btn btn-success btn-lg w-100 shadow">
-                                            Отправить анкету
-                                        </button>
-                                    </form>
+                {% if current_user.is_authenticated %}
+                    <div class="p-3 rounded-4 bg-white border mb-4 shadow-sm">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <div class="bg-dark text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                    {{ current_user.name[0] }}
                                 </div>
                             </div>
-                        {% endif %}
-                    {% else %}
-                        <div class="text-center py-5">
-                            <h2 class="display-6">Вкусно.</h2>
-                            <p class="text-muted">Войдите, чтобы присоединиться к нашей команде</p>
-                            <div class="mt-4">
-                                <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg px-5 shadow-sm">Войти</a>
-                                <a href="{{ url_for('register') }}" class="btn btn-outline-primary btn-lg px-5 shadow-sm ms-3">Регистрация</a>
+                            <div class="col">
+                                <h5 class="m-0 fw-bold">{{ current_user.name }} {{ current_user.surname }}</h5>
+                                <span class="badge bg-primary rounded-pill mt-1">{{ current_user.speciality }}</span>
                             </div>
                         </div>
+                    </div>
+
+                    {% if current_user.speciality == 'customer' %}
+                    <div id="jobBox" class="transform-wrapper d-flex align-items-center justify-content-center border-0">
+                        <button class="btn btn-primary-grad btn-lg w-100 h-100 shadow-sm btn-trigger" onclick="toggleWork()">
+                            Устроиться на работу
+                        </button>
+
+                        <div class="form-inner w-100 p-4 bg-white rounded-4 shadow-lg border">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h4 class="fw-800 m-0 text-primary">Анкета соискателя</h4>
+                                <button type="button" class="btn-close" onclick="toggleWork()"></button>
+                            </div>
+                            <form action="{{ url_for('apply_role') }}" method="post" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Должность</label>
+                                    <select name="role" class="form-select border-2">
+                                        <option value="worker">Курьер (на велосипеде)</option>
+                                        <option value="cook">Повар (горячий цех)</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Резюме (в свободной форме)</label>
+                                    <textarea name="resume_text" class="form-control border-2" rows="4" placeholder="Ваш опыт..."></textarea>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">Прикрепите PDF/DOCX</label>
+                                    <input type="file" name="resume_file" class="form-control border-2">
+                                </div>
+                                <button type="submit" class="btn btn-primary-grad btn-lg w-100 py-3">Отправить заявку</button>
+                            </form>
+                        </div>
+                    </div>
                     {% endif %}
-                </div>
+
+                {% else %}
+                    <div class="text-center py-5">
+                        <h1 class="display-4 fw-800 mb-3">Привет!</h1>
+                        <p class="text-muted mb-4">Чтобы увидеть профиль или стать сотрудником, нужно зайти в аккаунт.</p>
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="/login" class="btn btn-primary-grad px-5 btn-lg">Вход</a>
+                            <a href="/register" class="btn btn-outline-dark px-5 btn-lg border-2">Регистрация</a>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
 
-            {% if current_user.is_authenticated and current_user.speciality in ['admin', 'dev'] %}
-                <div class="card shadow border-0 overflow-hidden mt-4">
-                    <div class="card-header bg-success text-white py-3">
-                        <h5 class="mb-0"><i class="bi bi-clipboard-check me-2"></i>Входящие заявки</h5>
-                    </div>
-                    <div class="list-group list-group-flush">
-                        {% for req in requests %}
-                            <div class="list-group-item p-4">
-                                <div class="d-flex w-100 justify-content-between align-items-start">
-                                    <div>
-                                        <h6 class="fw-bold mb-1">Заявка от пользователя ID: {{ req.user_id }}</h6>
-                                        <p class="text-muted small mb-2">Желаемая роль: 
-                                            <span class="badge bg-light text-dark border">{{ req.requested_role }}</span>
-                                        </p>
-                                    </div>
-                                    <small class="text-muted">{{ req.created_at.strftime('%d.%m %H:%M') if req.created_at else '' }}</small>
-                                </div>
-                                
-                                <div class="bg-light p-3 rounded mb-3 border-start border-4 border-success">
-                                    <p class="mb-0 italic">"{{ req.resume_text }}"</p>
-                                </div>
-
-                                <div class="d-flex justify-content-between align-items-center">
-                                    {% if req.resume_file %}
-                                        <a href="{{ url_for('static', filename='uploads/resumes/' + req.resume_file) }}" 
-                                           target="_blank" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-file-earmark-text"></i> Посмотреть резюме
-                                        </a>
-                                    {% else %}
-                                        <span class="text-muted small">Файл не прикреплен</span>
-                                    {% endif %}
-                                    
-                                    <div class="btn-group">
-                                        <a href="{{ url_for('handle_request', req_id=req.id, action='accept') }}" 
-                                           class="btn btn-sm btn-success px-3">Принять</a>
-                                        <a href="{{ url_for('handle_request', req_id=req.id, action='reject') }}" 
-                                           class="btn btn-sm btn-outline-danger px-3">Отклонить</a>
-                                    </div>
-                                </div>
-                            </div>
-                        {% else %}
-                            <div class="list-group-item text-center py-5 text-muted">
-                                <i class="bi bi-inbox display-4 d-block mb-2"></i>
-                                Новых заявок пока нет
-                            </div>
-                        {% endfor %}
-                    </div>
+            {% if current_user.is_authenticated and current_user.speciality == 'admin' %}
+            <div class="glass-card overflow-hidden">
+                <div class="bg-dark p-3 text-white">
+                    <h5 class="m-0 fw-bold">Очередь заявок</h5>
                 </div>
+                <div class="list-group list-group-flush">
+                    {% for req in requests %}
+                    <div class="list-group-item p-4 bg-transparent border-bottom">
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="fw-bold">Пользователь #{{ req.user_id }}</span>
+                            <span class="badge bg-info text-dark">Хочет быть: {{ req.requested_role }}</span>
+                        </div>
+                        <div class="p-3 bg-white rounded-3 border mb-3 small">{{ req.resume_text }}</div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('handle_request', req_id=req.id, action='accept') }}" class="btn btn-success flex-grow-1 fw-bold">Принять</a>
+                            <a href="{{ url_for('handle_request', req_id=req.id, action='reject') }}" class="btn btn-outline-danger">Отказ</a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="p-5 text-center text-muted">Новых заявок нет. Все работают!</div>
+                    {% endfor %}
+                </div>
+            </div>
             {% endif %}
+
         </div>
     </div>
 </div>
 
 <script>
-    function expandForm() {
-        const wrapper = document.getElementById('jobWrapper');
-        wrapper.classList.add('expanded');
-        wrapper.classList.remove('d-flex', 'align-items-center', 'justify-content-center');
-    }
-
-    function collapseForm() {
-        const wrapper = document.getElementById('jobWrapper');
-        wrapper.classList.remove('expanded');
-        setTimeout(() => {
-            wrapper.classList.add('d-flex', 'align-items-center', 'justify-content-center');
-        }, 500);
+    function toggleWork() {
+        document.getElementById('jobBox').classList.toggle('active');
     }
 </script>
 {% endblock %}
