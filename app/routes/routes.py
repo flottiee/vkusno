@@ -6,7 +6,7 @@ from flask_login import login_user, login_required, logout_user, current_user
 from sqlalchemy.orm import selectinload
 from werkzeug.utils import secure_filename
 
-from app.models.menu_item import Category
+from app.models.menu_item import Category, MenuItem
 from instance.data_db import db_session
 from app.models.users import User, RoleRequest
 from app.forms.login_form import LoginForm
@@ -139,11 +139,14 @@ def setup_routes(app):
     @app.route('/menu')
     def menu():
         db_sess = db_session.create_session()
-        # menu_items_list = db_sess.query(MenuItem).all()
-        # for el in menu_items_list:
-        #     print(el.name, el.description, el.category.name)
+        # ищет все позиции меню
         all_categories_with_dishes = db_sess.query(Category).options(selectinload(Category.menu_items)).all()
-        with open('static/images/im.txt', 'r') as f:
-            f = f.readlines()
-            print(f)
+
         return render_template("menu.html", all_categories_with_dishes=all_categories_with_dishes)
+
+    @app.route('/add_to_cart', methods=['POST'])
+    def add_to_cart():
+        dish_id = request.form.get('dish_id')
+        db_sess = db_session.create_session()
+        print(db_sess.query(MenuItem).filter(MenuItem.id == dish_id).first())
+        return redirect(request.referrer or '/menu')
