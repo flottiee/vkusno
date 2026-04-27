@@ -7,10 +7,10 @@
         <div class="cards-grid">
             {% for dish in categ.menu_items %}
                 <div class="card">
-                    <img src="{{ url_for('static', filename='images/' + dish.image_url) }}" alt="{{ dish.name }}">
-                    <p>{{ dish.description }}</p>
-                    <p>{{ dish.is_available }}</p>
-                    <p>{{ "{:.2f}".format(dish.price) }}</p>
+                    <img src="{{ 'static/' + dish.image_url }}" alt="{{ dish.name }}">
+                    <p>Описание: {{ dish.description }}</p>
+                    <p>Доступно ли: {{ dish.is_available }}</p>
+                    <p>Цена: {{ "{:.2f}".format(dish.price) }}руб</p>
                 </div>
             {% endfor %}
         </div>

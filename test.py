@@ -30,17 +30,17 @@ def add_data_to_db():
     # Добавляем пункты меню
     menu_items_data = [
         {"name": "Маргарита", "description": "Томатный соус, моцарелла, базилик", "price": 450.0,
-         "image_url": "/static/images/margherita.jpg", "is_available": True, "category_name": "Пицца"},
+         "image_url": "images/margherita.jpg", "is_available": True, "category_name": "Пицца"},
         {"name": "Пепперони", "description": "Томатный соус, моцарелла, пепперони", "price": 520.0,
-         "image_url": "/static/images/pepperoni.jpg", "is_available": True, "category_name": "Пицца"},
+         "image_url": "images/pepperoni.jpg", "is_available": True, "category_name": "Пицца"},
         {"name": "Цезарь", "description": "Курица, пармезан, соус Цезарь, гренки", "price": 380.0,
-         "image_url": "/static/images/caesar.jpg", "is_available": True, "category_name": "Салаты"},
+         "image_url": "images/caesar.jpg", "is_available": True, "category_name": "Салаты"},
         {"name": "Греческий", "description": "Огурцы, помидоры, фета, маслины", "price": 340.0,
-         "image_url": "/static/images/greek.jpg", "is_available": True, "category_name": "Салаты"},
+         "image_url": "images/greek.jpg", "is_available": True, "category_name": "Салаты"},
         {"name": "Кола", "description": "Газированный напиток", "price": 120.0,
-         "image_url": "/static/images/cola.jpg", "is_available": True, "category_name": "Напитки"},
+         "image_url": "images/cola.jpg", "is_available": True, "category_name": "Напитки"},
         {"name": "Тирамису", "description": "Кофейный десерт с маскарпоне", "price": 290.0,
-         "image_url": "/static/images/tiramisu.jpg", "is_available": True, "category_name": "Десерты"},
+         "image_url": "images/tiramisu.jpg", "is_available": True, "category_name": "Десерты"},
     ]
 
     for item_data in menu_items_data:
