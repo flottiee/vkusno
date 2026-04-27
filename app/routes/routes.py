@@ -66,13 +66,22 @@ def setup_routes(app):
     @app.route('/')
     def index():
         db_sess = db_session.create_session()
-        all_requests = []
-        if current_user.is_authenticated and current_user.speciality == 'admin':
-            # Загружаем только те заявки, которые еще не обработаны (статус pending)
-            all_requests = db_sess.query(RoleRequest).filter(RoleRequest.status == 'pending').all()
+        all_requests = [] # Для админа
+        user_history = [] # Для пользователя
         
-        # Передаем список заявок в шаблон под именем requests
-        return render_template("index.html", title='Главная', requests=all_requests)
+        if current_user.is_authenticated:
+            if current_user.speciality == 'admin':
+                # Админ видит все новые заявки
+                all_requests = db_sess.query(RoleRequest).filter(RoleRequest.status == 'pending').all()
+            else:
+                # Пользователь видит только свои заявки (историю)
+                user_history = db_sess.query(RoleRequest).filter(RoleRequest.user_id == current_user.id).order_by(RoleRequest.created_at.desc()).all()
+            
+        return render_template("index.html", 
+                            title="Главная", 
+                            requests=all_requests, 
+                            history=user_history)
+        
 
     @app.route('/apply_role', methods=['POST'])
     @login_required

@@ -62,7 +62,7 @@
 
                     {% if current_user.speciality == 'customer' %}
                     <div id="jobBox" class="transform-wrapper d-flex align-items-center justify-content-center border-0">
-                        <button class="btn btn-primary-grad btn-lg w-100 h-100 shadow-sm btn-trigger" onclick="toggleWork()">
+                        <button class="btn btn-primary-grad btn-lg w-200 h-200 shadow-sm btn-trigger" onclick="toggleWork()">
                             Устроиться на работу
                         </button>
 
@@ -89,6 +89,51 @@
                                 </div>
                                 <button type="submit" class="btn btn-primary-grad btn-lg w-100 py-3">Отправить заявку</button>
                             </form>
+                            {% if current_user.is_authenticated and current_user.speciality != 'admin' %}
+                                <div class="glass-card p-4 mt-4 fade-in">
+                                    <h5 class="fw-800 mb-4 text-dark">
+                                        <i class="bi bi-clock-history me-2 text-primary"></i>Мои заявки
+                                    </h5>
+                                    
+                                    <div class="list-group list-group-flush">
+                                        {% for item in history %}
+                                            <div class="list-group-item bg-transparent px-0 py-3 border-bottom">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <div class="fw-bold text-dark">Позиция: {{ item.requested_role }}</div>
+                                                        <div class="text-muted small">
+                                                            {{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else 'Дата не указана' }}
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {% if item.status == 'pending' %}
+                                                        <span class="badge rounded-pill bg-warning text-dark px-3 py-2">
+                                                            <i class="bi bi-hourglass-split me-1"></i> На рассмотрении
+                                                        </span>
+                                                    {% elif item.status == 'approved' %}
+                                                        <span class="badge rounded-pill bg-success px-3 py-2">
+                                                            <i class="bi bi-check-circle-fill me-1"></i> Одобрено
+                                                        </span>
+                                                    {% elif item.status == 'rejected' %}
+                                                        <span class="badge rounded-pill bg-danger px-3 py-2">
+                                                            <i class="bi bi-x-circle-fill me-1"></i> Отклонено
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                                
+                                                <div class="mt-2 p-2 bg-white rounded-3 small text-secondary border-start border-3">
+                                                    {{ item.resume_text[:100] }}{% if item.resume_text|length > 100 %}...{% endif %}
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <div class="text-center py-4">
+                                                <i class="bi bi-send-x display-6 text-muted opacity-50"></i>
+                                                <p class="text-muted mt-2">Вы еще не подавали заявок</p>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                     {% endif %}

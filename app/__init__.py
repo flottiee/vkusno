@@ -13,6 +13,7 @@ def create_app():
     app = Flask(__name__, template_folder='../templates', static_folder='../static')
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
     app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER')
+    app.config['WTF_CSRF_ENABLED'] = False  # Отключаем CSRF для API
 
     login_manager = LoginManager()
     login_manager.init_app(app)
