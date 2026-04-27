@@ -125,14 +125,50 @@
             </div>
 
             {% if current_user.is_authenticated and current_user.speciality in ['admin', 'dev'] %}
-                <div class="card shadow border-0 overflow-hidden">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">Входящие заявки</h5>
+                <div class="card shadow border-0 overflow-hidden mt-4">
+                    <div class="card-header bg-success text-white py-3">
+                        <h5 class="mb-0"><i class="bi bi-clipboard-check me-2"></i>Входящие заявки</h5>
                     </div>
                     <div class="list-group list-group-flush">
                         {% for req in requests %}
                             <div class="list-group-item p-4">
+                                <div class="d-flex w-100 justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="fw-bold mb-1">Заявка от пользователя ID: {{ req.user_id }}</h6>
+                                        <p class="text-muted small mb-2">Желаемая роль: 
+                                            <span class="badge bg-light text-dark border">{{ req.requested_role }}</span>
+                                        </p>
+                                    </div>
+                                    <small class="text-muted">{{ req.created_at.strftime('%d.%m %H:%M') if req.created_at else '' }}</small>
                                 </div>
+                                
+                                <div class="bg-light p-3 rounded mb-3 border-start border-4 border-success">
+                                    <p class="mb-0 italic">"{{ req.resume_text }}"</p>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    {% if req.resume_file %}
+                                        <a href="{{ url_for('static', filename='uploads/resumes/' + req.resume_file) }}" 
+                                           target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-file-earmark-text"></i> Посмотреть резюме
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted small">Файл не прикреплен</span>
+                                    {% endif %}
+                                    
+                                    <div class="btn-group">
+                                        <a href="{{ url_for('handle_request', req_id=req.id, action='accept') }}" 
+                                           class="btn btn-sm btn-success px-3">Принять</a>
+                                        <a href="{{ url_for('handle_request', req_id=req.id, action='reject') }}" 
+                                           class="btn btn-sm btn-outline-danger px-3">Отклонить</a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="list-group-item text-center py-5 text-muted">
+                                <i class="bi bi-inbox display-4 d-block mb-2"></i>
+                                Новых заявок пока нет
+                            </div>
                         {% endfor %}
                     </div>
                 </div>

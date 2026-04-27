@@ -67,10 +67,11 @@ def setup_routes(app):
     def index():
         db_sess = db_session.create_session()
         all_requests = []
-        # Если зашел админ или разработчик — видим список заявок
-        if current_user.is_authenticated and current_user.speciality in ['admin', 'dev']:
+        if current_user.is_authenticated and current_user.speciality == 'admin':
+            # Загружаем только те заявки, которые еще не обработаны (статус pending)
             all_requests = db_sess.query(RoleRequest).filter(RoleRequest.status == 'pending').all()
-
+        
+        # Передаем список заявок в шаблон под именем requests
         return render_template("index.html", title='Главная', requests=all_requests)
 
     @app.route('/apply_role', methods=['POST'])
