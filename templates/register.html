@@ -49,15 +49,6 @@
                 </div>
             {% endfor %}
         </p>
-        <p>
-            {{ form.speciality.label }}<br>
-            {{ form.speciality(class="form-control", type="text") }}<br>
-            {% for error in form.speciality.errors %}
-                <div class="alert alert-danger" role="alert">
-                    {{ error }}
-                </div>
-            {% endfor %}
-        </p>
         <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
         <div>{{ message }}</div>
     </form>
