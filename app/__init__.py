@@ -3,19 +3,16 @@ from flask import Flask
 from flask_login import LoginManager
 import os
 from dotenv import load_dotenv
-
 from instance.data_db import db_session
-
 from app.models.users import User
-
-from app.routes.auth import auth_blueprint
-from app.routes.index import index_blueprint
-
+from .routes.routes import setup_routes
 
 def create_app():
     load_dotenv()
-    app = Flask(__name__)
+    # Указываем пути к шаблонам и статике, так как __init__ в папке app/
+    app = Flask(__name__, template_folder='../templates', static_folder='../static')
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+    app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER')
 
     login_manager = LoginManager()
     login_manager.init_app(app)
@@ -27,7 +24,5 @@ def create_app():
         db_sess = db_session.create_session()
         return db_sess.get(User, user_id)
 
-    app.register_blueprint(index_blueprint)
-    app.register_blueprint(auth_blueprint)
-
+    setup_routes(app)  # Настраиваем роуты
     return app

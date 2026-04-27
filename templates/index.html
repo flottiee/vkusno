@@ -1,13 +1,159 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+    /* Анимация трансформации */
+    .job-container {
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+        max-width: 250px; /* Размер как у кнопки */
+        max-height: 50px;
+        border-radius: 8px;
+    }
 
-{% if current_user.is_authenticated %}
-    <h1>Окей, аутенфикацию ты прошел!</h1>
-{% else %}
-    <p>
-        <a class="btn btn-primary " href="/auth/register">Зарегистрироваться</a>
-        <a class="btn btn-success" href="/auth/login">Войти</a>
-    </p>
-{% endif %}
+    .job-container.expanded {
+        max-width: 100%; /* Расширяется на всю карточку */
+        max-height: 800px; /* С запасом для формы */
+        background-color: #f8fff9;
+        border: 2px solid #198754;
+        padding: 20px;
+    }
+
+    .form-content {
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease;
+    }
+
+    .job-container.expanded .form-content {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .btn-transform {
+        transition: opacity 0.3s ease;
+    }
+
+    .job-container.expanded .btn-transform {
+        display: none;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-0 mb-4">
+                <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-person-circle me-2"></i> Профиль пользователя
+                    </h4>
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm px-3 shadow-sm" 
+                        style="border-width: 2px; font-weight: bold;">
+                            <i class="bi bi-box-arrow-right"></i> Выйти
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="card-body p-4">
+                    {% if current_user.is_authenticated %}
+                        <div class="row mb-3">
+                            <div class="col-sm-4 text-muted uppercase small fw-bold">ФИО</div>
+                            <div class="col-sm-8 text-dark">{{ current_user.name }} {{ current_user.surname }}</div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-sm-4 text-muted uppercase small fw-bold">Текущий статус</div>
+                            <div class="col-sm-8">
+                                <span class="badge rounded-pill {% if current_user.speciality == 'admin' %}bg-danger{% else %}bg-primary{% endif %}">
+                                    {{ current_user.speciality }}
+                                </span>
+                            </div>
+                        </div>
+
+                        {% if current_user.speciality == 'customer' %}
+                            <div id="jobWrapper" class="job-container mx-auto border d-flex align-items-center justify-content-center">
+                                
+                                <button id="startBtn" class="btn btn-success btn-transform px-4" onclick="expandForm()">
+                                    Устроиться на работу
+                                </button>
+
+                                <div class="form-content w-100">
+                                    <div class="d-flex justify-content-between align-items-center mb-4">
+                                        <h4 class="text-success mb-0">Анкета сотрудника</h4>
+                                        <button type="button" class="btn-close" onclick="collapseForm()"></button>
+                                    </div>
+                                    
+                                    <form action="{{ url_for('apply_role') }}" method="post" enctype="multipart/form-data">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Кем вы хотите быть?</label>
+                                            <div class="btn-group w-100" role="group">
+                                                <input type="radio" class="btn-check" name="role" id="role1" value="worker" checked>
+                                                <label class="btn btn-outline-success" for="role1">Доставщик</label>
+                                                
+                                                <input type="radio" class="btn-check" name="role" id="role2" value="cook">
+                                                <label class="btn btn-outline-success" for="role2">Повар</label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Опыт работы и навыки</label>
+                                            <textarea name="resume_text" class="form-control shadow-sm" rows="4" placeholder="Напишите немного о себе..." required></textarea>
+                                        </div>
+                                        
+                                        <div class="mb-4">
+                                            <label class="form-label fw-bold">Файл резюме (PDF/DOC)</label>
+                                            <input type="file" name="resume_file" class="form-control" required>
+                                        </div>
+                                        
+                                        <button type="submit" class="btn btn-success btn-lg w-100 shadow">
+                                            Отправить анкету
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <h2 class="display-6">Вкусно.</h2>
+                            <p class="text-muted">Войдите, чтобы присоединиться к нашей команде</p>
+                            <div class="mt-4">
+                                <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg px-5 shadow-sm">Войти</a>
+                                <a href="{{ url_for('register') }}" class="btn btn-outline-primary btn-lg px-5 shadow-sm ms-3">Регистрация</a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if current_user.is_authenticated and current_user.speciality in ['admin', 'dev'] %}
+                <div class="card shadow border-0 overflow-hidden">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Входящие заявки</h5>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for req in requests %}
+                            <div class="list-group-item p-4">
+                                </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function expandForm() {
+        const wrapper = document.getElementById('jobWrapper');
+        wrapper.classList.add('expanded');
+        wrapper.classList.remove('d-flex', 'align-items-center', 'justify-content-center');
+    }
+
+    function collapseForm() {
+        const wrapper = document.getElementById('jobWrapper');
+        wrapper.classList.remove('expanded');
+        setTimeout(() => {
+            wrapper.classList.add('d-flex', 'align-items-center', 'justify-content-center');
+        }, 500);
+    }
+</script>
 {% endblock %}
