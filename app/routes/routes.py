@@ -55,18 +55,7 @@ def setup_routes(app):
             user = db_sess.query(User).filter(User.email == form.email.data).first()
             if user and user.check_password(form.password.data):
                 login_user(user, remember=form.remember_me.data)
-
-                session_cart = session.pop('cart', None)
-                if session_cart:
-                    # Находим или создаём Cart для пользователя
-                    cart_record = db_sess.query(Cart).filter(Cart.user_id == user.id).first()
-                    if not cart_record:
-                        cart_record = Cart(user_id=user.id, content={})
-                        db_sess.add(cart_record)
-                    # Объединяем корзины (если в БД уже что-то было, нужно решить: заменять или мержить)
-                    # Простой вариант: заменить содержимое БД на сессионное.
-                    cart_record.content = session_cart
-                    db_sess.commit()
+                
                 return redirect("/")
             return render_template('login.html', title='Авторизация', form=form,
                                    message="Неправильный логин или пароль")
@@ -75,7 +64,6 @@ def setup_routes(app):
     @app.route('/logout')
     @login_required
     def logout():
-        session.pop('cart', None)
         logout_user()
         return redirect("/")
 
