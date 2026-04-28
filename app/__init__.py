@@ -1,8 +1,11 @@
 # app/__init__.py
-from flask import Flask
+from flask import Flask, make_response, jsonify
 from flask_login import LoginManager
 import os
 from dotenv import load_dotenv
+from flask_wtf import CSRFProtect
+from flask_wtf.csrf import generate_csrf
+
 from instance.data_db import db_session
 from app.models.users import User
 from .models.menu_item import Category, MenuItem
@@ -14,17 +17,35 @@ def create_app():
     app = Flask(__name__, template_folder='../templates', static_folder='../static')
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
     app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER')
-    app.config['WTF_CSRF_ENABLED'] = False  # Отключаем CSRF для API
+
+    csrf = CSRFProtect()
+    csrf.init_app(app)
 
     login_manager = LoginManager()
     login_manager.init_app(app)
 
     db_session.global_init("instance/db/vkusno.db")
 
+    @app.context_processor
+    def inject_csrf():
+        return {'csrf_token': generate_csrf}
+
+    @app.context_processor
+    def inject_cart_count():  # создает счетчик позиций в корзине, которым может воспользоваться любой шаблон
+        db_sess = db_session.create_session()
+
+        return dict(cart_total=total_quantity)
+
+    @app.errorhandler(400)
+    def csrf_error(e):
+        return make_response(jsonify({'error': 'Error with CSRF token'}), 400)
+
     @login_manager.user_loader
     def load_user(user_id):
         db_sess = db_session.create_session()
         return db_sess.get(User, user_id)
+
+    add_data_to_db()
 
     setup_routes(app)  # Настраиваем роуты
     return app
@@ -62,6 +83,14 @@ def add_data_to_db():
          "image_url": "images/margherita.jpg", "is_available": True, "category_name": "Пицца"},
         {"name": "Пепперони", "description": "Томатный соус, моцарелла, пепперони", "price": 520.0,
          "image_url": "images/pepperoni.jpg", "is_available": True, "category_name": "Пицца"},
+        {"name": "Додо", "description": "Томатный соус, моцарелла, пепперони", "price": 520.0,
+         "image_url": "images/pepperoni.jpg", "is_available": True, "category_name": "Пицца"},
+        {"name": "Четыре сыра", "description": "Томатный соус, моцарелла, пепперони", "price": 520.0,
+         "image_url": "images/pepperoni.jpg", "is_available": True, "category_name": "Пицца"},
+        {"name": "Шашлычная", "description": "Томатный соус, моцарелла, пепперони", "price": 520.0,
+         "image_url": "images/pepperoni.jpg", "is_available": True, "category_name": "Пицца"},
+        {"name": "Бургерная", "description": "Томатный соус, моцарелла, пепперони", "price": 520.0,
+         "image_url": "images/pepperoni.jpg", "is_available": True, "category_name": "Пицца"},
         {"name": "Цезарь", "description": "Курица, пармезан, соус Цезарь, гренки", "price": 380.0,
          "image_url": "images/caesar.jpg", "is_available": True, "category_name": "Салаты"},
         {"name": "Греческий", "description": "Огурцы, помидоры, фета, маслины", "price": 340.0,
@@ -70,6 +99,8 @@ def add_data_to_db():
          "image_url": "images/cola.jpg", "is_available": True, "category_name": "Напитки"},
         {"name": "Тирамису", "description": "Кофейный десерт с маскарпоне", "price": 290.0,
          "image_url": "images/tiramisu.jpg", "is_available": True, "category_name": "Десерты"},
+        {"name": "Котлета", "description": "Кофейный десерт с маскарпоне", "price": 290.0,
+         "image_url": "images/tiramisu.jpg", "is_available": False, "category_name": "Десерты"},
     ]
 
     for item_data in menu_items_data:
