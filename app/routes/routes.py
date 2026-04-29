@@ -6,6 +6,7 @@ from flask_login import login_user, login_required, logout_user, current_user
 from sqlalchemy.orm import selectinload
 from werkzeug.utils import secure_filename
 
+from app.models.cart import Cart
 from app.models.menu_item import Category, MenuItem
 from instance.data_db import db_session
 from app.models.users import User, RoleRequest
@@ -55,7 +56,6 @@ def setup_routes(app):
             user = db_sess.query(User).filter(User.email == form.email.data).first()
             if user and user.check_password(form.password.data):
                 login_user(user, remember=form.remember_me.data)
-                
                 return redirect("/")
             return render_template('login.html', title='Авторизация', form=form,
                                    message="Неправильный логин или пароль")
@@ -142,20 +142,41 @@ def setup_routes(app):
     @app.route('/menu')
     def menu():
         db_sess = db_session.create_session()
-        # ищет все позиции меню
         all_categories_with_dishes = db_sess.query(Category).options(selectinload(Category.menu_items)).all()
-
         return render_template("menu.html", all_categories_with_dishes=all_categories_with_dishes)
 
     @app.route('/add_to_cart', methods=['POST'])
     def add_to_cart():
         dish_id = request.form.get('dish_id')
         db_sess = db_session.create_session()
-        print(db_sess.query(MenuItem).filter(MenuItem.id == dish_id).first().name)
-        # cart = get_cart()
-        # total_quantity = sum(item['quantity'] for item in cart.values())
-        return jsonify({'status': 'ok', 'cart_total': 5})
+        if not current_user.is_authenticated:
+            return jsonify({'error': 'Вы не зарегистрированы'})
+
+        user = db_sess.merge(current_user)
+
+        cart = user.cart
+        if not cart:
+            from app.models.cart import Cart
+            cart = Cart(content={'dishes': [], 'price': 0})
+            user.cart = cart
+            db_sess.add(cart)
+
+        dishes = cart.content.get('dishes', [])
+        dishes.append(dish_id)
+        dish = db_sess.query(MenuItem).filter(MenuItem.id == dish_id).first()
+        if dish:
+            cart.content['price'] = dish.price + cart.content['price']
+
+        cart_total = len(dishes)
+
+        db_sess.commit()
+        return jsonify({'cart_total': cart_total})
 
     @app.route('/view_cart')
     def view_cart():
-        pass
+        db_sess = db_session.create_session()
+        names = []
+        for dish_id in current_user.cart.content['dishes']:
+            names.append(db_sess.query(MenuItem).filter(MenuItem.id == dish_id).first().name)
+
+        return jsonify({'names': names, 'price': current_user.cart.content['price']})

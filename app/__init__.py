@@ -1,10 +1,11 @@
 # app/__init__.py
 from flask import Flask, make_response, jsonify
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 import os
 from dotenv import load_dotenv
 from flask_wtf import CSRFProtect
 from flask_wtf.csrf import generate_csrf
+from sqlalchemy.orm import joinedload
 
 from instance.data_db import db_session
 from app.models.users import User
@@ -31,10 +32,16 @@ def create_app():
         return {'csrf_token': generate_csrf}
 
     @app.context_processor
-    def inject_cart_count():  # создает счетчик позиций в корзине, которым может воспользоваться любой шаблон
+    def inject_cart_count():
+        """
+        Делает переменную cart_total доступной во всех шаблонах.
+        Возвращает 0, если пользователь не авторизован или корзина пуста.
+        """
         db_sess = db_session.create_session()
-
-        return dict(cart_total=total_quantity)
+        cart_total = 0
+        if current_user.is_authenticated and current_user.cart:
+            cart_total = len(current_user.cart.content.get('dishes', []))
+        return dict(cart_total=cart_total)
 
     @app.errorhandler(400)
     def csrf_error(e):
@@ -43,7 +50,7 @@ def create_app():
     @login_manager.user_loader
     def load_user(user_id):
         db_sess = db_session.create_session()
-        return db_sess.get(User, user_id)
+        return db_sess.query(User).options(joinedload(User.cart)).get(int(user_id))
 
     add_data_to_db()
 

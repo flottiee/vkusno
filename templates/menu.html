@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
+<script>
+    // Инициализация начального количества при загрузке страницы
+    window.cartTotal = {{ cart_total | tojson }};
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCartBadge(window.cartTotal);
+    });
+</script>
+
 <div class="container mt-5 mb-5">
     <h1 class="mb-4 fw-800 text-center">Наше меню</h1>
 
@@ -38,7 +46,8 @@
                         </div>
 
                         {% if dish.is_available %}
-                            <button class="btn btn-primary-grad w-100 mt-3 py-2 rounded-4 shadow-sm add-to-cart-btn" data-dish-id="{{ dish.id }}">
+                            <button class="btn btn-primary-grad w-100 mt-3 py-2 rounded-4 shadow-sm add-to-cart-btn"
+                                    data-dish-id="{{ dish.id }}">
                                 В корзину
                             </button>
                         {% else %}
@@ -52,7 +61,9 @@
         </div>
     {% endfor %}
 </div>
+
 <script>
+    // Обработчики добавления в корзину
     document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             const dishId = btn.dataset.dishId;
@@ -72,23 +83,5 @@
             }
         });
     });
-
-    function updateCartBadge(total) {
-        const badge = document.querySelector('.navbar .badge');
-        if (total > 0) {
-            if (badge) {
-                badge.textContent = total;
-            } else {
-                const cartLink = document.querySelector('a[href*="view_cart"]');
-                const newBadge = document.createElement('span');
-                newBadge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
-                newBadge.style.fontSize = '0.7rem';
-                newBadge.textContent = total;
-                cartLink.appendChild(newBadge);
-            }
-        } else if (badge) {
-            badge.remove();
-        }
-    }
 </script>
 {% endblock %}
