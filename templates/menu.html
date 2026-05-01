@@ -1,14 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-<script>
-    // Инициализация начального количества при загрузке страницы
-    window.cartTotal = {{ cart_total | tojson }};
-    document.addEventListener('DOMContentLoaded', function() {
-        updateCartBadge(window.cartTotal);
-    });
-</script>
-
 <div class="container mt-5 mb-5">
     <h1 class="mb-4 fw-800 text-center">Наше меню</h1>
 
