@@ -4,6 +4,7 @@ from flask import render_template, redirect, request, url_for, abort, jsonify, s
 from flask import current_app as app  # Используем current_app как замену app
 from flask_login import login_user, login_required, logout_user, current_user
 from sqlalchemy.orm import selectinload
+from sqlalchemy.orm.attributes import flag_modified
 from werkzeug.utils import secure_filename
 
 from app.models.cart import Cart
@@ -12,7 +13,6 @@ from instance.data_db import db_session
 from app.models.users import User, RoleRequest
 from app.forms.login_form import LoginForm
 from app.forms.register_form import RegisterForm
-
 
 # --- AUTH ROUTES ---
 
@@ -145,38 +145,92 @@ def setup_routes(app):
         all_categories_with_dishes = db_sess.query(Category).options(selectinload(Category.menu_items)).all()
         return render_template("menu.html", all_categories_with_dishes=all_categories_with_dishes)
 
+    def create_cart(db_sess, user):
+        from app.models.cart import Cart
+        cart = Cart(content={'dishes': [], 'price': 0})
+        user.cart = cart
+        db_sess.add(cart)
+
     @app.route('/add_to_cart', methods=['POST'])
     def add_to_cart():
-        dish_id = request.form.get('dish_id')
+        dish_id = int(request.form.get('dish_id'))
         db_sess = db_session.create_session()
         if not current_user.is_authenticated:
-            return jsonify({'error': 'Вы не зарегистрированы'})
+            print('not auth')
+            return jsonify({'error': 'Вы не зарегистрированы'}), 401
 
         user = db_sess.merge(current_user)
-
         cart = user.cart
         if not cart:
-            from app.models.cart import Cart
-            cart = Cart(content={'dishes': [], 'price': 0})
-            user.cart = cart
-            db_sess.add(cart)
+            create_cart(db_sess, user)
 
         dishes = cart.content.get('dishes', [])
-        dishes.append(dish_id)
+        existing = next((item for item in dishes if item['dish_id'] == dish_id), None)
+        if existing:
+            existing['quantity'] += 1
+        else:
+            dishes.append({'dish_id': dish_id, 'quantity': 1})
+
         dish = db_sess.query(MenuItem).filter(MenuItem.id == dish_id).first()
         if dish:
-            cart.content['price'] = dish.price + cart.content['price']
+            cart.content['price'] = dish.price + cart.content.get('price', 0)
 
         cart_total = len(dishes)
+        cart_items = {item['dish_id']: item['quantity'] for item in dishes}
 
+        flag_modified(cart, 'content')
         db_sess.commit()
-        return jsonify({'cart_total': cart_total})
+
+        new_quantity = existing['quantity'] if existing else 1
+        return jsonify({'cart_total': cart_total, 'cart_items': cart_items, 'dish_quantity': new_quantity})
 
     @app.route('/view_cart')
     def view_cart():
         db_sess = db_session.create_session()
-        names = []
-        for dish_id in current_user.cart.content['dishes']:
-            names.append(db_sess.query(MenuItem).filter(MenuItem.id == dish_id).first().name)
+        names_and_quantity = []
+        price = 0
+        if current_user.is_authenticated:
+            user = db_sess.merge(current_user)
+            if user.cart:
+                for dish in user.cart.content['dishes']:
+                    res = db_sess.query(MenuItem).filter(MenuItem.id == dish['dish_id']).first()
+                    names_and_quantity.append((res.name, dish['quantity']))
+                price = user.cart.content['price']
+        return render_template('cart.html',
+                               names_and_quantity=names_and_quantity,
+                               price=price)
 
-        return jsonify({'names': names, 'price': current_user.cart.content['price']})
+    @app.route('/update_cart_item', methods=['POST'])
+    def update_cart_item():
+        dish_id = int(request.form.get('dish_id'))
+        delta = int(request.form.get('delta'))  # +1 или -1
+        db_sess = db_session.create_session()
+        if not current_user.is_authenticated:
+            return jsonify({'error': 'Вы не зарегистрированы'}), 401
+
+        user = db_sess.merge(current_user)
+        cart = user.cart
+        if not cart:
+            return jsonify({'error': 'Корзина пуста'}), 400
+
+        dishes = cart.content.get('dishes', [])
+        item = next((i for i in dishes if i['dish_id'] == dish_id), None)
+        if not item:
+            return jsonify({'error': 'Блюдо не найдено в корзине'}), 404
+
+        item['quantity'] += delta
+        if item['quantity'] <= 0:
+            dishes.remove(item)
+
+        dish = db_sess.query(MenuItem).get(dish_id)
+        if dish:
+            cart.content['price'] = cart.content.get('price', 0) + dish.price * delta
+
+        cart_total = len(dishes)
+        flag_modified(cart, 'content')
+        db_sess.commit()
+
+        return jsonify({
+            'cart_total': cart_total,
+            'dish_quantity': item['quantity'] if item else 0
+        })

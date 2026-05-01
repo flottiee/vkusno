@@ -37,11 +37,13 @@ def create_app():
         Делает переменную cart_total доступной во всех шаблонах.
         Возвращает 0, если пользователь не авторизован или корзина пуста.
         """
-        db_sess = db_session.create_session()
         cart_total = 0
+        cart_items_map = {}
         if current_user.is_authenticated and current_user.cart:
-            cart_total = len(current_user.cart.content.get('dishes', []))
-        return dict(cart_total=cart_total)
+            dishes = current_user.cart.content.get('dishes', [])
+            cart_total = len(dishes)
+            cart_items_map = {item['dish_id']: item['quantity'] for item in dishes}
+        return dict(cart_total=cart_total, cart_items_map=cart_items_map)
 
     @app.errorhandler(400)
     def csrf_error(e):
@@ -50,7 +52,8 @@ def create_app():
     @login_manager.user_loader
     def load_user(user_id):
         db_sess = db_session.create_session()
-        return db_sess.query(User).options(joinedload(User.cart)).get(int(user_id))
+        user = db_sess.query(User).options(joinedload(User.cart)).get(int(user_id))
+        return user
 
     add_data_to_db()
 

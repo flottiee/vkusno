@@ -46,10 +46,20 @@
                         </div>
 
                         {% if dish.is_available %}
-                            <button class="btn btn-primary-grad w-100 mt-3 py-2 rounded-4 shadow-sm add-to-cart-btn"
-                                    data-dish-id="{{ dish.id }}">
-                                В корзину
-                            </button>
+                            {% set in_cart = cart_items_map.get(dish.id, 0) %}
+                            <div class="cart-control" data-dish-id="{{ dish.id }}">
+                              {% if in_cart > 0 %}
+                                <div class="d-flex align-items-center justify-content-center gap-2 mt-3">
+                                  <button class="btn btn-sm btn-outline-secondary rounded-circle cart-decr">−</button>
+                                  <span class="fw-bold cart-quantity">{{ in_cart }}</span>
+                                  <button class="btn btn-sm btn-outline-secondary rounded-circle cart-incr">+</button>
+                                </div>
+                              {% else %}
+                                <button class="btn btn-primary-grad w-100 mt-3 py-2 rounded-4 shadow-sm add-to-cart-btn">
+                                  В корзину
+                                </button>
+                              {% endif %}
+                            </div>
                         {% else %}
                             <button class="btn btn-outline-secondary w-100 mt-3 py-2 rounded-4" disabled>
                                 Недоступно
@@ -63,25 +73,105 @@
 </div>
 
 <script>
-    // Обработчики добавления в корзину
-    document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const dishId = btn.dataset.dishId;
-            const response = await fetch('{{ url_for("add_to_cart") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: `dish_id=${encodeURIComponent(dishId)}`
-            });
-            if (response.ok) {
-                const data = await response.json();
-                updateCartBadge(data.cart_total);
-            } else {
-                alert('Ошибка при добавлении');
-            }
+    // Инициализация бейджа при загрузке
+window.cartTotal = {{ cart_total | tojson }};
+document.addEventListener('DOMContentLoaded', function() {
+    updateCartBadge(window.cartTotal);
+});
+
+// --- Вспомогательные функции для смены кнопок ---
+function showQuantityControl(dishId, quantity) {
+    const control = document.querySelector(`.cart-control[data-dish-id="${dishId}"]`);
+    if (!control) return;
+    control.innerHTML = `
+        <div class="d-flex align-items-center justify-content-center gap-2 mt-3">
+            <button class="btn btn-sm btn-outline-secondary rounded-circle cart-decr">−</button>
+            <span class="fw-bold cart-quantity">${quantity}</span>
+            <button class="btn btn-sm btn-outline-secondary rounded-circle cart-incr">+</button>
+        </div>
+    `;
+}
+
+function showAddButton(dishId) {
+    const control = document.querySelector(`.cart-control[data-dish-id="${dishId}"]`);
+    if (!control) return;
+    control.innerHTML = `
+        <button class="btn btn-primary-grad w-100 mt-3 py-2 rounded-4 shadow-sm add-to-cart-btn">
+            В корзину
+        </button>
+    `;
+}
+
+// --- Делегирование событий на контейнере меню ---
+document.querySelector('.container.mt-5.mb-5').addEventListener('click', async (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const control = btn.closest('.cart-control');
+    if (!control) return;
+    const dishId = control.dataset.dishId;
+
+    // Кнопка "В корзину"
+    if (btn.classList.contains('add-to-cart-btn')) {
+        const resp = await fetch('{{ url_for("add_to_cart") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: `dish_id=${encodeURIComponent(dishId)}`
         });
-    });
+        if (resp.ok) {
+            const data = await resp.json();
+            updateCartBadge(data.cart_total);
+            showQuantityControl(dishId, data.dish_quantity);
+        } else {
+            alert('Ошибка при добавлении');
+        }
+    }
+
+    // Кнопка "+"
+    if (btn.classList.contains('cart-incr')) {
+        const resp = await fetch('{{ url_for("update_cart_item") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: `dish_id=${dishId}&delta=1`
+        });
+        if (resp.ok) {
+            const data = await resp.json();
+            updateCartBadge(data.cart_total);
+            if (data.dish_quantity > 0) {
+                const quantitySpan = control.querySelector('.cart-quantity');
+                if (quantitySpan) quantitySpan.textContent = data.dish_quantity;
+            } else {
+                showAddButton(dishId);
+            }
+        }
+    }
+
+    // Кнопка "–"
+    if (btn.classList.contains('cart-decr')) {
+        const resp = await fetch('{{ url_for("update_cart_item") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: `dish_id=${dishId}&delta=-1`
+        });
+        if (resp.ok) {
+            const data = await resp.json();
+            updateCartBadge(data.cart_total);
+            if (data.dish_quantity > 0) {
+                const quantitySpan = control.querySelector('.cart-quantity');
+                if (quantitySpan) quantitySpan.textContent = data.dish_quantity;
+            } else {
+                showAddButton(dishId);
+            }
+        }
+    }
+});
 </script>
 {% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <h1 class="mb-4 fw-800 text-center">Корзина</h1>
+
+    {% if not current_user.is_authenticated %}
+        <div class="alert alert-warning text-center p-4 rounded-4 shadow-sm" role="alert">
+            <i class="bi bi-cart-x fs-1 d-block mb-3"></i>
+            Чтобы просматривать корзину, пожалуйста,
+            <a href="{{ url_for('login') }}" class="alert-link">войдите</a>
+            или
+            <a href="{{ url_for('register') }}" class="alert-link">зарегистрируйтесь</a>.
+        </div>
+    {% elif names_and_quantity %}
+        {% for name_and_quan in names_and_quantity %}
+            <p>{{ name_and_quan[0] }} — {{ name_and_quan[1] }} шт.</p>
+        {% endfor %}
+        <p class="fw-bold">Итого: {{ price }} ₽</p>
+    {% else %}
+        <p class="text-center text-muted">Корзина пуста</p>
+    {% endif %}
+</div>
+{% endblock %}
