@@ -21,6 +21,7 @@ def create_app():
 
     csrf = CSRFProtect()
     csrf.init_app(app)
+    app.config['WTF_CSRF_ENABLED'] = False  # Отключаем CSRF для API
 
     login_manager = LoginManager()
     login_manager.init_app(app)

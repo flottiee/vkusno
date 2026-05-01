@@ -57,13 +57,6 @@ def setup_routes(app):
             if db_sess.query(User).filter(User.email == form.email.data).first():
                 return render_template('register.html', title='Регистрация', form=form,
                                        message="Такой пользователь уже есть")
-
-            user = User(
-                surname=form.surname.data,
-                name=form.name.data,
-                email=form.email.data,
-                speciality="customer"  # Начальная роль
-            )
             user = User(
                 surname=form.surname.data,
                 name=form.name.data,
@@ -124,7 +117,6 @@ def setup_routes(app):
         # Работа с файлом резюме (Критерий: загрузка файлов)
         file = request.files.get('resume_file')
         resume_path = ""
-
         if file and file.filename != '':
             filename = secure_filename(f"user_{current_user.id}_{file.filename}")
             # Убедись, что папка static/uploads/resumes создана!
@@ -138,7 +130,6 @@ def setup_routes(app):
             resume_text=request.form.get('resume_text'),
             resume_file=resume_path  # Добавь это поле в модель RoleRequest, если его нет
         )
-
         db_sess.add(role_req)
         db_sess.commit()
         return redirect(url_for('index'))
@@ -183,10 +174,10 @@ def setup_routes(app):
     @app.route('/add_to_cart', methods=['POST'])
     @login_required_api
     def add_to_cart():
-        dish_id = int(request.form.get('dish_id'))
+        dish_id = int(request.form.get('dish_id'))  # pyright: ignore[reportArgumentType]
         db_sess = db_session.create_session()
         dish = db_sess.query(MenuItem).get(dish_id)
-        if not dish or not dish.is_available:
+        if not dish or not dish.is_available: # pyright: ignore[reportGeneralTypeIssues]
             return jsonify({'error': 'Блюдо недоступно или не найдено'}), 400
 
         user = db_sess.merge(current_user)
@@ -245,7 +236,7 @@ def setup_routes(app):
             return jsonify({'error': 'Недопустимое значение delta'}), 400
 
         dish = db_sess.query(MenuItem).get(dish_id)
-        if not dish or not dish.is_available:
+        if not dish or not dish.is_available: # pyright: ignore[reportGeneralTypeIssues]
             return jsonify({'error': 'Блюдо недоступно или не найдено'}), 400
 
         user = db_sess.merge(current_user)

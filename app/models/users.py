@@ -6,16 +6,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from instance.data_db.db_session import SqlAlchemyBase
 from datetime import datetime
 
-
 class RoleRequest(SqlAlchemyBase):
     __tablename__ = 'role_requests'
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     user_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('users.id'), nullable=False)
     requested_role = sqlalchemy.Column(sqlalchemy.String(20), nullable=False)  # например, 'admin' или 'manager'
-    resume_text = sqlalchemy.Column(sqlalchemy.Text, nullable=False)  # мотивационное эссе
-    resume_file = sqlalchemy.Column(sqlalchemy.String, nullable=True)  # путь к загруженному файлу резюме
-    status = sqlalchemy.Column(sqlalchemy.String(20), default='pending')  # pending, approved, rejected
+    resume_text = sqlalchemy.Column(sqlalchemy.Text, nullable=False)           # мотивационное эссе
+    resume_file = sqlalchemy.Column(sqlalchemy.String, nullable=True)          # путь к загруженному файлу резюме
+    status = sqlalchemy.Column(sqlalchemy.String(20), default='pending')      # pending, approved, rejected
     created_at = sqlalchemy.Column(sqlalchemy.DateTime, default=datetime.utcnow)
 
     user = orm.relationship('User', backref=orm.backref('role_requests', lazy=True))
@@ -51,5 +50,4 @@ class JobApplication(SqlAlchemyBase):
     reason = sqlalchemy.Column(sqlalchemy.Text, nullable=True)
     resume_path = sqlalchemy.Column(sqlalchemy.String, nullable=True)  # Путь к файлу
     status = sqlalchemy.Column(sqlalchemy.String, default="pending")  # pending, accepted, rejected
-
     user = orm.relationship('User')
