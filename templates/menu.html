@@ -5,165 +5,178 @@
     <h1 class="mb-4 fw-800 text-center">Наше меню</h1>
 
     {% for category in all_categories_with_dishes %}
-        <h2 class="mt-5 mb-3 fw-700">{{ category.name }}</h2>
-        <div class="row g-4">
-            {% for dish in category.menu_items %}
-                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                    <div class="glass-card h-100 p-3 rounded-4 shadow-lg fade-in d-flex flex-column">
-                        <div class="mb-3 overflow-hidden rounded-4" style="height: 180px;">
-                            {% if dish.image_url %}
-                                <img src="{{ url_for('static', filename=dish.image_url) }}"
-                                     alt="{{ dish.name }}"
-                                     class="w-100 h-100 object-fit-cover">
-                            {% else %}
-                                <div class="bg-light w-100 h-100 d-flex align-items-center justify-content-center text-muted">
-                                    <i class="bi bi-image"></i> Нет фото
-                                </div>
-                            {% endif %}
-                        </div>
-
-                        <h3 class="h5 fw-800 mb-2">{{ dish.name }}</h3>
-
-                        <p class="small text-muted flex-grow-1">
-                            {{ dish.description[:100] }}{% if dish.description|length > 100 %}…{% endif %}
-                        </p>
-
-                        <div class="d-flex justify-content-between align-items-center mt-2">
-                            <span class="h5 fw-800 text-primary mb-0">{{ dish.price }} ₽</span>
-                            {% if dish.is_available %}
-                                <span class="badge bg-success rounded-pill">В наличии</span>
-                            {% else %}
-                                <span class="badge bg-secondary rounded-pill">Нет в наличии</span>
-                            {% endif %}
-                        </div>
-
-                        {% if dish.is_available %}
-                            {% set in_cart = cart_items_map.get(dish.id, 0) %}
-                            <div class="cart-control" data-dish-id="{{ dish.id }}">
-                              {% if in_cart > 0 %}
-                                <div class="d-flex align-items-center justify-content-center gap-2 mt-3">
-                                  <button class="btn btn-sm btn-outline-secondary rounded-circle cart-decr">−</button>
-                                  <span class="fw-bold cart-quantity">{{ in_cart }}</span>
-                                  <button class="btn btn-sm btn-outline-secondary rounded-circle cart-incr">+</button>
-                                </div>
-                              {% else %}
-                                <button class="btn btn-primary-grad w-100 mt-3 py-2 rounded-4 shadow-sm add-to-cart-btn">
-                                  В корзину
-                                </button>
-                              {% endif %}
+        {% if category.menu_items %}
+            <h2 class="mt-5 mb-3 fw-700">{{ category.name }}</h2>
+            <div class="row g-4">
+                {% for dish in category.menu_items %}
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <div class="glass-card h-100 p-3 rounded-4 shadow-lg fade-in d-flex flex-column">
+                            <div class="mb-3 overflow-hidden rounded-4" style="height: 180px;">
+                                {% if dish.image_url %}
+                                    <img src="{{ url_for('static', filename=dish.image_url) }}"
+                                         alt="{{ dish.name }}"
+                                         class="w-100 h-100 object-fit-cover">
+                                {% else %}
+                                    <div class="bg-light w-100 h-100 d-flex align-items-center justify-content-center text-muted">
+                                        <i class="bi bi-image"></i> Нет фото
+                                    </div>
+                                {% endif %}
                             </div>
-                        {% else %}
-                            <button class="btn btn-outline-secondary w-100 mt-3 py-2 rounded-4" disabled>
-                                Недоступно
-                            </button>
-                        {% endif %}
+
+                            <h3 class="h5 fw-800 mb-2">{{ dish.name }}</h3>
+
+                            <p class="small text-muted flex-grow-1">
+                                {{ dish.description[:100] }}{% if dish.description|length > 100 %}…{% endif %}
+                            </p>
+
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span class="h5 fw-800 text-primary mb-0">{{ dish.price }} ₽</span>
+                                {% if dish.is_available %}
+                                    <span class="badge bg-success rounded-pill">В наличии</span>
+                                {% else %}
+                                    <span class="badge bg-secondary rounded-pill">Нет в наличии</span>
+                                {% endif %}
+                            </div>
+
+                            {% if dish.is_available %}
+                                {% set in_cart = cart_items_map.get(dish.id, 0) %}
+                                <div class="cart-control" data-dish-id="{{ dish.id }}">
+                                  {% if in_cart > 0 %}
+                                    <div class="d-flex align-items-center justify-content-center gap-2 mt-3">
+                                      <button class="btn btn-sm btn-outline-secondary rounded-circle cart-decr">−</button>
+                                      <span class="fw-bold cart-quantity">{{ in_cart }}</span>
+                                      <button class="btn btn-sm btn-outline-secondary rounded-circle cart-incr">+</button>
+                                    </div>
+                                  {% else %}
+                                    <button class="btn btn-primary-grad w-100 mt-3 py-2 rounded-4 shadow-sm add-to-cart-btn">
+                                      В корзину
+                                    </button>
+                                  {% endif %}
+                                </div>
+                            {% else %}
+                                <button class="btn btn-outline-secondary w-100 mt-3 py-2 rounded-4" disabled>
+                                    Недоступно
+                                </button>
+                            {% endif %}
+                        </div>
                     </div>
-                </div>
-            {% endfor %}
-        </div>
+                {% endfor %}
+            </div>
+    {% endif %}
     {% endfor %}
 </div>
 
 <script>
     // Инициализация бейджа при загрузке
-window.cartTotal = {{ cart_total | tojson }};
-document.addEventListener('DOMContentLoaded', function() {
-    updateCartBadge(window.cartTotal);
-});
+    window.cartTotal = {{ cart_total | tojson }};
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCartBadge(window.cartTotal);
+    });
 
-// --- Вспомогательные функции для смены кнопок ---
-function showQuantityControl(dishId, quantity) {
-    const control = document.querySelector(`.cart-control[data-dish-id="${dishId}"]`);
-    if (!control) return;
-    control.innerHTML = `
-        <div class="d-flex align-items-center justify-content-center gap-2 mt-3">
-            <button class="btn btn-sm btn-outline-secondary rounded-circle cart-decr">−</button>
-            <span class="fw-bold cart-quantity">${quantity}</span>
-            <button class="btn btn-sm btn-outline-secondary rounded-circle cart-incr">+</button>
-        </div>
-    `;
-}
+    // --- Вспомогательные функции для смены кнопок ---
+    function showQuantityControl(dishId, quantity) {
+        const control = document.querySelector(`.cart-control[data-dish-id="${dishId}"]`);
+        if (!control) return;
+        control.innerHTML = `
+            <div class="d-flex align-items-center justify-content-center gap-2 mt-3">
+                <button class="btn btn-sm btn-outline-secondary rounded-circle cart-decr">−</button>
+                <span class="fw-bold cart-quantity">${quantity}</span>
+                <button class="btn btn-sm btn-outline-secondary rounded-circle cart-incr">+</button>
+            </div>
+        `;
+    }
 
-function showAddButton(dishId) {
-    const control = document.querySelector(`.cart-control[data-dish-id="${dishId}"]`);
-    if (!control) return;
-    control.innerHTML = `
-        <button class="btn btn-primary-grad w-100 mt-3 py-2 rounded-4 shadow-sm add-to-cart-btn">
-            В корзину
-        </button>
-    `;
-}
+    function showAddButton(dishId) {
+        const control = document.querySelector(`.cart-control[data-dish-id="${dishId}"]`);
+        if (!control) return;
+        control.innerHTML = `
+            <button class="btn btn-primary-grad w-100 mt-3 py-2 rounded-4 shadow-sm add-to-cart-btn">
+                В корзину
+            </button>
+        `;
+    }
 
-// --- Делегирование событий на контейнере меню ---
-document.querySelector('.container.mt-5.mb-5').addEventListener('click', async (e) => {
-    const btn = e.target.closest('button');
-    if (!btn) return;
-    const control = btn.closest('.cart-control');
-    if (!control) return;
-    const dishId = control.dataset.dishId;
-
-    // Кнопка "В корзину"
-    if (btn.classList.contains('add-to-cart-btn')) {
-        const resp = await fetch('{{ url_for("add_to_cart") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: `dish_id=${encodeURIComponent(dishId)}`
-        });
+    // Общая функция обработки ответа сервера
+    async function handleResponse(resp, dishId) {
         if (resp.ok) {
             const data = await resp.json();
             updateCartBadge(data.cart_total);
-            showQuantityControl(dishId, data.dish_quantity);
+            if (data.dish_quantity !== undefined) {
+                if (data.dish_quantity > 0) {
+                    const quantitySpan = document.querySelector(`.cart-control[data-dish-id="${dishId}"] .cart-quantity`);
+                    if (quantitySpan) {
+                        quantitySpan.textContent = data.dish_quantity;
+                    } else {
+                        showQuantityControl(dishId, data.dish_quantity);
+                    }
+                } else {
+                    showAddButton(dishId);
+                }
+            }
         } else {
-            alert('Ошибка при добавлении');
-        }
-    }
-
-    // Кнопка "+"
-    if (btn.classList.contains('cart-incr')) {
-        const resp = await fetch('{{ url_for("update_cart_item") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: `dish_id=${dishId}&delta=1`
-        });
-        if (resp.ok) {
-            const data = await resp.json();
-            updateCartBadge(data.cart_total);
-            if (data.dish_quantity > 0) {
-                const quantitySpan = control.querySelector('.cart-quantity');
-                if (quantitySpan) quantitySpan.textContent = data.dish_quantity;
+            if (resp.status === 401) {
+                const authModal = new bootstrap.Modal(document.getElementById('authModal'));
+                authModal.show();
             } else {
-                showAddButton(dishId);
+                let errorMsg = 'Произошла ошибка';
+                try {
+                    const errData = await resp.json();
+                    if (errData && errData.error) {
+                        errorMsg = errData.error;
+                    }
+                } catch (e) {}
+                alert(errorMsg);
             }
         }
     }
 
-    // Кнопка "–"
-    if (btn.classList.contains('cart-decr')) {
-        const resp = await fetch('{{ url_for("update_cart_item") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: `dish_id=${dishId}&delta=-1`
-        });
-        if (resp.ok) {
-            const data = await resp.json();
-            updateCartBadge(data.cart_total);
-            if (data.dish_quantity > 0) {
-                const quantitySpan = control.querySelector('.cart-quantity');
-                if (quantitySpan) quantitySpan.textContent = data.dish_quantity;
-            } else {
-                showAddButton(dishId);
-            }
+    // --- Делегирование событий на контейнере меню ---
+    document.querySelector('.container.mt-5.mb-5').addEventListener('click', async (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        const control = btn.closest('.cart-control');
+        if (!control) return;
+        const dishId = control.dataset.dishId;
+
+        // Кнопка "В корзину"
+        if (btn.classList.contains('add-to-cart-btn')) {
+            const resp = await fetch('{{ url_for("add_to_cart") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: `dish_id=${encodeURIComponent(dishId)}`
+            });
+            handleResponse(resp, dishId);
         }
-    }
-});
+
+        // Кнопка "+"
+        if (btn.classList.contains('cart-incr')) {
+            const resp = await fetch('{{ url_for("update_cart_item") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: `dish_id=${dishId}&delta=1`
+            });
+            handleResponse(resp, dishId);
+        }
+
+        // Кнопка "–"
+        if (btn.classList.contains('cart-decr')) {
+            const resp = await fetch('{{ url_for("update_cart_item") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: `dish_id=${dishId}&delta=-1`
+            });
+            handleResponse(resp, dishId);
+        }
+    });
 </script>
+
 {% endblock %}

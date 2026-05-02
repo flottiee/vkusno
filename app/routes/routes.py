@@ -20,7 +20,10 @@ from app.forms.register_form import RegisterForm
 # ---------- Вспомогательные функции ----------
 
 def login_required_api(f):
-    """Декоратор для API: возвращает JSON-ошибку, если пользователь не авторизован."""
+    """
+    Декоратор для API: возвращает JSON-ошибку, если пользователь не авторизован.
+    Нужен для того, чтобы не ломался JavaScript в html корзины
+    """
     @wraps(f)
     def decorated(*args, **kwargs):
         if not current_user.is_authenticated:
@@ -156,6 +159,76 @@ def setup_routes(app):
                 req.status = 'rejected'  # type: ignore
             db_sess.commit()
         return redirect(url_for('index'))
+
+    @app.route('/admin/edit_menu')
+    def edit_menu():
+        if not current_user.is_authenticated or current_user.speciality != 'admin':
+            abort(403)
+
+        db_sess = db_session.create_session()
+        dishes = db_sess.query(MenuItem).all()
+        categories = db_sess.query(Category).all()
+        return render_template("editing_menu.html", dishes=dishes, categories=categories)
+
+    @app.route('/admin/delete_dish/<int:dish_id>', methods=['POST'])
+    @login_required
+    def delete_dish(dish_id):
+        db_sess = db_session.create_session()
+        dish = db_sess.query(MenuItem).get(dish_id)
+        if not dish:
+            return jsonify({'error': 'Not found'}), 404
+        db_sess.delete(dish)
+        db_sess.commit()
+        return redirect('/admin/edit_menu')
+
+    @app.route('/admin/add_dish', methods=['POST'])
+    @login_required
+    def add_dish():
+        db_sess = db_session.create_session()
+
+        name = request.form.get('name')
+        description = request.form.get('description')
+        price = float(request.form.get('price'))
+        category_name = request.form.get('category')
+        is_available = 'is_available' in request.form
+        image_file = request.files.get('image')
+
+        category = None
+        if category_name:
+            category = db_sess.query(Category).filter(Category.name == category_name).first()
+            if not category:
+                category = Category(name=category_name)
+                db_sess.add(category)
+                db_sess.commit()
+        if image_file:
+            image_file_name = image_file.filename
+            image_file.save(os.path.join(app.config['IMAGE_FOLDER'], image_file_name))
+            dish = MenuItem(
+                name=name,
+                description=description,
+                price=price,
+                category=category,
+                image_url=f'images/{image_file_name}',
+                is_available=is_available
+            )
+            db_sess.add(dish)
+            db_sess.commit()
+        else:
+            dish = MenuItem(
+                name=name,
+                description=description,
+                price=price,
+                category=category,
+                is_available=is_available
+            )
+            db_sess.add(dish)
+            db_sess.commit()
+        return redirect('/admin/edit_menu')
+
+    @app.route('/admin/edit_dish/<int:dish_id>', methods=['POST'])
+    @login_required
+    def edit_dish(dish_id):
+        return jsonify({'edit_dish': dish_id})
 
     # --- MENU ---
 

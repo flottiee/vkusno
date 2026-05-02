@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+  <div class="glass-card overflow-hidden">
+    <div class="bg-dark p-3 text-white d-flex justify-content-between align-items-center">
+      <h5 class="m-0 fw-bold">Управление меню</h5>
+      <button class="btn btn-primary-grad btn-sm rounded-4 px-3" data-bs-toggle="modal" data-bs-target="#addDishModal">
+        <i class="bi bi-plus-lg me-1"></i> Добавить блюдо
+      </button>
+    </div>
+    <div class="list-group list-group-flush">
+      {% for dish in dishes %}
+        <div class="list-group-item p-4 bg-transparent border-bottom">
+            <div class="row align-items-center">
+                <div class="col-md-2 mb-3 mb-md-0">
+                    {% if dish.image_url %}
+                    <img src="{{ url_for('static', filename=dish.image_url) }}" alt="{{ dish.name }}" class="img-fluid rounded-3" style="height: 80px; object-fit: cover;">
+                    {% else %}
+                    <div class="bg-light rounded-3 d-flex align-items-center justify-content-center" style="height: 80px;">
+                        <i class="bi bi-image text-muted fs-3"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-3">
+                    <h6 class="fw-bold mb-1">{{ dish.name }}</h6>
+                    <p class="text-muted small mb-0">{{ dish.description[:80] }}{% if dish.description|length > 80 %}…{% endif %}</p>
+                </div>
+                <div class="col-md-1">
+                    {% if dish.category %}
+                    <span class="badge bg-info rounded-pill text-dark">{{ dish.category.name }}</span>
+                    {% else %}
+                    <span class="badge bg-light text-muted rounded-pill">—</span>
+                    {% endif %}
+                </div>
+                <div class="col-md-2 text-md-end">
+                    <span class="fw-bold text-primary fs-5">{{ dish.price }} ₽</span>
+                </div>
+                <div class="col-md-2">
+                    {% if dish.is_available %}
+                    <span class="badge bg-success rounded-pill">В наличии</span>
+                    {% else %}
+                    <span class="badge bg-secondary rounded-pill">Нет в наличии</span>
+                    {% endif %}
+                </div>
+                <div class="col-md-2 text-md-end mt-2 mt-md-0">
+                    <div class="d-flex gap-2 justify-content-md-end">
+                        <button class="btn btn-outline-primary btn-sm rounded-3"
+                                data-bs-toggle="modal" data-bs-target="#editDishModal"
+                                data-dish-id="{{ dish.id }}"
+                                data-dish-name="{{ dish.name }}"
+                                data-dish-description="{{ dish.description }}"
+                                data-dish-price="{{ dish.price }}"
+                                data-dish-image="{{ dish.image_url or '' }}"
+                                data-dish-available="{{ dish.is_available }}"
+                                data-dish-category="{{ dish.category.name if dish.category else '' }}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <form action="{{ url_for('delete_dish', dish_id=dish.id) }}" method="POST" onsubmit="return confirm('Удалить блюдо «{{ dish.name }}»?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-outline-danger btn-sm rounded-3"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="p-5 text-center text-muted">Меню пока пустует. Добавьте первое блюдо!</div>
+        {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="addDishModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow-lg border-0">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-800">Новое блюдо</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('add_dish') }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-600">Название</label>
+                        <input type="text" name="name" class="form-control rounded-3" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-600">Описание</label>
+                        <textarea name="description" class="form-control rounded-3" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-600">Категория</label>
+                        <input type="text" name="category" class="form-control rounded-3" list="categoryList" placeholder="Введите или выберите категорию">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-600">Цена (₽)</label>
+                        <input type="number" step="0.01" name="price" class="form-control rounded-3" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-600">Изображение</label>
+                        <input type="file" name="image" class="form-control rounded-3">
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" name="is_available" id="addAvailable" checked>
+                        <label class="form-check-label" for="addAvailable">В наличии</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-4" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary-grad rounded-4 px-4">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editDishModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow-lg border-0">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-800">Редактировать блюдо</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editDishForm" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <input type="hidden" name="dish_id" id="editDishId">
+                    <div class="mb-3">
+                        <label class="form-label fw-600">Название</label>
+                        <input type="text" name="name" id="editDishName" class="form-control rounded-3" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-600">Описание</label>
+                        <textarea name="description" id="editDishDescription" class="form-control rounded-3" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-600">Категория</label>
+                        <input type="text" name="category" id="editDishCategory" class="form-control rounded-3" list="categoryList" placeholder="Введите или выберите категорию">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-600">Цена (₽)</label>
+                        <input type="number" step="0.01" name="price" id="editDishPrice" class="form-control rounded-3" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-600">Новое изображение (оставьте пустым, чтобы не менять)</label>
+                        <input type="file" name="image" class="form-control rounded-3">
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" name="is_available" id="editDishAvailable">
+                        <label class="form-check-label" for="editDishAvailable">В наличии</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-4" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary-grad rounded-4 px-4">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<datalist id="categoryList">
+    {% for cat in categories %}
+    <option value="{{ cat.name }}">
+    {% endfor %}
+</datalist>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const editModal = document.getElementById('editDishModal');
+        editModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget; // кнопка, открывшая модал
+            if (!button) return;
+            const dishId = button.getAttribute('data-dish-id');
+            const name = button.getAttribute('data-dish-name');
+            const description = button.getAttribute('data-dish-description');
+            const price = button.getAttribute('data-dish-price');
+            const available = button.getAttribute('data-dish-available') === 'True';
+            const category = button.getAttribute('data-dish-category') || '';
+
+            document.getElementById('editDishId').value = dishId;
+            document.getElementById('editDishName').value = name;
+            document.getElementById('editDishDescription').value = description;
+            document.getElementById('editDishPrice').value = price;
+            document.getElementById('editDishAvailable').checked = available;
+            document.getElementById('editDishCategory').value = category;
+
+            const form = document.getElementById('editDishForm');
+            form.action = `admin/edit_dish/${dishId}`;
+        });
+    });
+</script>
+{% endblock %}
