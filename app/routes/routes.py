@@ -2,7 +2,7 @@
 import os
 from functools import wraps
 
-from flask import render_template, redirect, request, url_for, abort, jsonify, session
+from flask import render_template, redirect, request, url_for, abort, jsonify, session, flash
 from flask import current_app as app  # Используем current_app как замену app
 from flask_login import login_user, login_required, logout_user, current_user
 from sqlalchemy.orm import selectinload
@@ -228,7 +228,42 @@ def setup_routes(app):
     @app.route('/admin/edit_dish/<int:dish_id>', methods=['POST'])
     @login_required
     def edit_dish(dish_id):
-        return jsonify({'edit_dish': dish_id})
+        db_sess = db_session.create_session()
+        dish = db_sess.query(MenuItem).get(dish_id)
+        if not dish:
+            return jsonify({'error': 'Not found'}), 404
+        dish.name = request.form.get('name', dish.name)
+        dish.description = request.form.get('description', dish.description)
+
+        try:
+            dish.price = float(request.form.get('price', dish.price))
+        except (TypeError, ValueError):
+            return redirect(url_for('edit_menu'))
+
+        dish.is_available = 'is_available' in request.form
+
+        category_name = request.form.get('category', '').strip()
+        if category_name:
+            category = db_sess.query(Category).filter(Category.name == category_name).first()
+            if not category:
+                category = Category(name=category_name)
+                db_sess.add(category)
+            dish.category = category
+
+        image_file = request.files.get('image')
+        print(image_file, '---', image_file.filename)
+        if image_file and image_file.filename != '':
+            if dish.image_url:
+                print('yes')
+                old_path = os.path.join(app.config['IMAGE_FOLDER'], dish.image_url)
+                print(old_path)
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+            image_file_name = f'images/{image_file.filename}'
+            image_file.save(os.path.join(app.config['IMAGE_FOLDER'], image_file_name))
+            dish.image_url = image_file_name
+        db_sess.commit()
+        return redirect('/admin/edit_menu')
 
     # --- MENU ---
 
