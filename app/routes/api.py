@@ -1,5 +1,7 @@
 # --- API ROUTES ---
-from flask import request, jsonify
+import json
+
+from flask import request, jsonify, Response
 from flask_login import login_user, login_required, current_user
 from sqlalchemy.orm import selectinload
 
@@ -46,7 +48,9 @@ def api_profile():
 def api_menu():
     db_sess = db_session.create_session()
     all_categories_with_dishes = db_sess.query(Category).options(selectinload(Category.menu_items)).all()
-    return jsonify({'menu': [dish.to_dict(only=('name', 'description', 'is_available')) for category in all_categories_with_dishes for dish in category.menu_items]}), 200
+    data = {'menu': [dish.to_dict(only=('name', 'description', 'is_available')) for category in all_categories_with_dishes for dish in category.menu_items]}
+    return Response(json.dumps(data, ensure_ascii=False, indent=2),
+                    mimetype='application/json; charset=utf-8')
 
 @app.route('/api/order', methods=['POST'])
 @login_required
