@@ -1,6 +1,7 @@
 import sqlalchemy
 
 from sqlalchemy import orm
+from sqlalchemy_serializer import SerializerMixin
 
 from instance.data_db.db_session import SqlAlchemyBase
 
@@ -11,7 +12,7 @@ class Category(SqlAlchemyBase):
     name = sqlalchemy.Column(sqlalchemy.String(50), unique=True, nullable=False)
 
 
-class MenuItem(SqlAlchemyBase):
+class MenuItem(SqlAlchemyBase, SerializerMixin):
     __tablename__ = 'menu_items'
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
