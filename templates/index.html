@@ -36,7 +36,6 @@
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            
             <div class="glass-card p-4 mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2 class="fw-800 m-0">Мой кабинет</h2>
@@ -72,6 +71,7 @@
                                 <button type="button" class="btn-close" onclick="toggleWork()"></button>
                             </div>
                             <form action="{{ url_for('apply_role') }}" method="post" enctype="multipart/form-data">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Должность</label>
                                     <select name="role" class="form-select border-2">
@@ -94,7 +94,6 @@
                                     <h5 class="fw-800 mb-4 text-dark">
                                         <i class="bi bi-clock-history me-2 text-primary"></i>Мои заявки
                                     </h5>
-                                    
                                     <div class="list-group list-group-flush">
                                         {% for item in history %}
                                             <div class="list-group-item bg-transparent px-0 py-3 border-bottom">
@@ -105,7 +104,6 @@
                                                             {{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else 'Дата не указана' }}
                                                         </div>
                                                     </div>
-                                                    
                                                     {% if item.status == 'pending' %}
                                                         <span class="badge rounded-pill bg-warning text-dark px-3 py-2">
                                                             <i class="bi bi-hourglass-split me-1"></i> На рассмотрении
@@ -120,7 +118,6 @@
                                                         </span>
                                                     {% endif %}
                                                 </div>
-                                                
                                                 <div class="mt-2 p-2 bg-white rounded-3 small text-secondary border-start border-3">
                                                     {{ item.resume_text[:100] }}{% if item.resume_text|length > 100 %}...{% endif %}
                                                 </div>
@@ -137,6 +134,48 @@
                         </div>
                     </div>
                     {% endif %}
+                    {% if current_user.is_authenticated and current_user.speciality == 'cook' %}
+                        <div class="glass-card overflow-hidden mt-4 border-0 shadow-lg">
+                            <div class="bg-dark p-3 text-white d-flex align-items-center">
+                                <i class="bi bi-fire me-2 text-warning"></i>
+                                <h5 class="m-0 fw-bold">Заказы на кухне</h5>
+                            </div>
+                            <div class="list-group list-group-flush">
+                                {% for order in orders %}
+                                <div class="list-group-item p-4 bg-transparent border-bottom">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <span class="fw-800 fs-5">Заказ #{{ order.id }}</span>
+                                            <div class="text-muted small">Клиент ID: {{ order.user_id }}</div>
+                                        </div>
+                                        <span class="badge rounded-pill {% if order.status == 'cooking' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %} px-3 py-2">
+                                            {{ 'Готовится' if order.status == 'cooking' else 'Ожидает' }}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="p-3 bg-white rounded-4 border-2 mb-3">
+                                        <p class="mb-0 text-secondary italic">{{ order.details or "Без уточнения деталей" }}</p>
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        {% if order.status == 'pending' %}
+                                            <a href="{{ url_for('update_order_status', order_id=order.id, new_status='cooking') }}" 
+                                            class="btn btn-primary-grad flex-grow-1 fw-bold py-2">Принять в работу</a>
+                                        {% elif order.status == 'cooking' %}
+                                            <a href="{{ url_for('update_order_status', order_id=order.id, new_status='ready') }}" 
+                                            class="btn btn-success flex-grow-1 fw-bold py-2">Готово к выдаче</a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="p-5 text-center text-muted">
+                                    <i class="bi bi-check2-all display-4 opacity-25"></i>
+                                    <p class="mt-2">Все заказы приготовлены!</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
 
                 {% else %}
                     <div class="text-center py-5">
@@ -151,6 +190,12 @@
             </div>
 
             {% if current_user.is_authenticated and current_user.speciality == 'admin' %}
+            <div class="mb-3 text-end">
+                <a href="{{ url_for('edit_menu') }}" class="btn btn-primary-grad rounded-pill px-4">
+                    <i class="bi bi-pencil-square me-1"></i> Редактировать меню
+                </a>
+            </div>
+
             <div class="glass-card overflow-hidden">
                 <div class="bg-dark p-3 text-white">
                     <h5 class="m-0 fw-bold">Очередь заявок</h5>

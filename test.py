@@ -1,67 +1,5 @@
-# app/__init__.py
-from flask import Flask, make_response, jsonify
-from flask_login import LoginManager, current_user
-import os
-from dotenv import load_dotenv
-from flask_wtf import CSRFProtect
-from flask_wtf.csrf import generate_csrf
-from sqlalchemy.orm import joinedload
-
+from app.models.menu_item import Category, MenuItem
 from instance.data_db import db_session
-from app.models.users import User
-from .models.menu_item import Category, MenuItem
-from .routes.routes import setup_routes
-
-def create_app():
-    load_dotenv()
-    # Указываем пути к шаблонам и статике, так как __init__ в папке app/
-    app = Flask(__name__, template_folder='../templates', static_folder='../static')
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-    app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER')
-    app.config['IMAGE_FOLDER'] = os.getenv('IMAGE_FOLDER')
-
-    csrf = CSRFProtect()
-    csrf.init_app(app)
-    # app.config['WTF_CSRF_ENABLED'] = False  # Отключаем CSRF для API
-
-    login_manager = LoginManager()
-    login_manager.init_app(app)
-
-    db_session.global_init("instance/db/vkusno.db")
-
-    @app.context_processor
-    def inject_csrf():
-        return {'csrf_token': generate_csrf}
-
-    @app.context_processor
-    def inject_cart_count():
-        """
-        Делает переменную cart_total доступной во всех шаблонах.
-        Возвращает 0, если пользователь не авторизован или корзина пуста.
-        """
-        cart_total = 0
-        cart_items_map = {}
-        if current_user.is_authenticated and current_user.cart:
-            dishes = current_user.cart.content.get('dishes', [])
-            cart_total = len(dishes)
-            cart_items_map = {item['dish_id']: item['quantity'] for item in dishes}
-        return dict(cart_total=cart_total, cart_items_map=cart_items_map)
-
-    @app.errorhandler(400)
-    def csrf_error(e):
-        return make_response(jsonify({'error': 'Error with CSRF token'}), 400)
-
-    @login_manager.user_loader
-    def load_user(user_id):
-        db_sess = db_session.create_session()
-        user = db_sess.query(User).options(joinedload(User.cart)).get(int(user_id))
-        return user
-
-    # add_data_to_db()
-
-    setup_routes(app)  # Настраиваем роуты
-    return app
-
 
 def add_data_to_db():
     # Создаём сессию для работы с БД
@@ -94,15 +32,15 @@ def add_data_to_db():
         {"name": "Маргарита", "description": "Томатный соус, моцарелла, базилик", "price": 450.0,
          "image_url": "images/margherita.jpg", "is_available": True, "category_name": "Пицца"},
         {"name": "Пепперони", "description": "Томатный соус, моцарелла, пепперони", "price": 520.0,
-         "image_url": "images/pepper.png", "is_available": True, "category_name": "Пицца"},
+         "image_url": "images/pepperoni.jpg", "is_available": True, "category_name": "Пицца"},
         {"name": "Додо", "description": "Томатный соус, моцарелла, пепперони", "price": 520.0,
-         "image_url": "images/pepper.png", "is_available": True, "category_name": "Пицца"},
+         "image_url": "images/pepperoni.jpg", "is_available": True, "category_name": "Пицца"},
         {"name": "Четыре сыра", "description": "Томатный соус, моцарелла, пепперони", "price": 520.0,
-         "image_url": "images/pepper.png", "is_available": True, "category_name": "Пицца"},
+         "image_url": "images/pepperoni.jpg", "is_available": True, "category_name": "Пицца"},
         {"name": "Шашлычная", "description": "Томатный соус, моцарелла, пепперони", "price": 520.0,
-         "image_url": "images/pepper.png", "is_available": True, "category_name": "Пицца"},
+         "image_url": "images/pepperoni.jpg", "is_available": True, "category_name": "Пицца"},
         {"name": "Бургерная", "description": "Томатный соус, моцарелла, пепперони", "price": 520.0,
-         "image_url": "images/pepper.png", "is_available": True, "category_name": "Пицца"},
+         "image_url": "images/pepperoni.jpg", "is_available": True, "category_name": "Пицца"},
         {"name": "Цезарь", "description": "Курица, пармезан, соус Цезарь, гренки", "price": 380.0,
          "image_url": "images/caesar.jpg", "is_available": True, "category_name": "Салаты"},
         {"name": "Греческий", "description": "Огурцы, помидоры, фета, маслины", "price": 340.0,
@@ -111,8 +49,6 @@ def add_data_to_db():
          "image_url": "images/cola.jpg", "is_available": True, "category_name": "Напитки"},
         {"name": "Тирамису", "description": "Кофейный десерт с маскарпоне", "price": 290.0,
          "image_url": "images/tiramisu.jpg", "is_available": True, "category_name": "Десерты"},
-        {"name": "Котлета", "description": "Кофейный десерт с маскарпоне", "price": 290.0,
-         "image_url": "images/tiramisu.jpg", "is_available": False, "category_name": "Десерты"},
     ]
 
     for item_data in menu_items_data:
@@ -141,3 +77,6 @@ def add_data_to_db():
     # Сохраняем все изменения в БД
     session.commit()
     print("Данные успешно добавлены в базу данных.")
+
+if __name__ == "__main__":
+    add_data_to_db()

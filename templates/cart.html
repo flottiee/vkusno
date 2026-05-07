@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <h1 class="mb-4 fw-800 text-center">Корзина</h1>
+
+    {% if not current_user.is_authenticated %}
+        <div class="alert alert-warning text-center p-5 rounded-4 shadow-lg" role="alert">
+            <i class="bi bi-cart-x fs-1 d-block mb-3"></i>
+            <p class="mb-2 fs-5">Чтобы просматривать корзину, пожалуйста войдите в свой профиль</p>
+            <div class="d-flex justify-content-center gap-2">
+                <a href="{{ url_for('login') }}" class="btn btn-primary-grad rounded-4 px-4">Войти</a>
+                <a href="{{ url_for('register') }}" class="btn btn-outline-primary rounded-4 px-4">Зарегистрироваться</a>
+            </div>
+        </div>
+    {% elif names_and_quantity %}
+        <div class="glass-card p-3 rounded-4 shadow-lg mb-4">
+            <div class="list-group list-group-flush">
+                {% for item in names_and_quantity %}
+                <div class="list-group-item d-flex align-items-center gap-3 p-3 border-0 rounded-3 hover-shadow-sm">
+                    <div class="cart-item-icon bg-primary bg-opacity-10 rounded-circle flex-shrink-0">
+                        <i class="bi bi-egg-fried text-primary fs-4"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-0 fw-700">{{ item[0] }}</h6>
+                        <div class="d-flex align-items-center gap-2 text-muted small">
+                            <span>{{ item[1] }} шт.</span>
+                            <span>•</span>
+                            <span>{{ item[2] }} ₽/шт.</span>
+                        </div>
+                    </div>
+                    <div class="fw-700 fs-5">
+                        <span>{{ item[1] * item[2] }} ₽</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="glass-card p-4 rounded-4 shadow-lg d-flex justify-content-between align-items-center mb-4">
+            <span class="fw-700 fs-4">Итого</span>
+            <span class="fw-800 fs-3 text-primary">{{ price }} ₽</span>
+        </div>
+
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{{ url_for('menu') }}" class="btn btn-outline-primary rounded-4 px-4 py-2 shadow-sm">
+                <i class="bi bi-arrow-left me-2"></i>Продолжить выбор
+            </a>
+            <form action="{{ url_for('create_order') }}" method="post">
+                <button type="submit" class="btn btn-primary-grad rounded-4 px-5 py-2 shadow-lg">
+                    <i class="bi bi-check2-circle me-2"></i>Оформить заказ
+                </button>
+            </form>
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-cart2 display-1 text-muted opacity-50 d-block mb-4"></i>
+            <p class="text-muted fs-5 mb-4">Ваша корзина пуста</p>
+            <a href="{{ url_for('menu') }}" class="btn btn-primary-grad rounded-4 px-5 py-2 shadow-lg">
+                <i class="bi bi-menu-button-wide me-2"></i>Перейти в меню
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .cart-item-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .hover-shadow-sm {
+        transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .hover-shadow-sm:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
