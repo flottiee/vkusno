@@ -71,7 +71,7 @@
                                 <button type="button" class="btn-close" onclick="toggleWork()"></button>
                             </div>
                             <form action="{{ url_for('apply_role') }}" method="post" enctype="multipart/form-data">
-                                {{ csrf_token() }}
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Должность</label>
                                     <select name="role" class="form-select border-2">
