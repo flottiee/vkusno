@@ -134,6 +134,48 @@
                         </div>
                     </div>
                     {% endif %}
+                    {% if current_user.is_authenticated and current_user.speciality == 'cook' %}
+                        <div class="glass-card overflow-hidden mt-4 border-0 shadow-lg">
+                            <div class="bg-dark p-3 text-white d-flex align-items-center">
+                                <i class="bi bi-fire me-2 text-warning"></i>
+                                <h5 class="m-0 fw-bold">Заказы на кухне</h5>
+                            </div>
+                            <div class="list-group list-group-flush">
+                                {% for order in orders %}
+                                <div class="list-group-item p-4 bg-transparent border-bottom">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <span class="fw-800 fs-5">Заказ #{{ order.id }}</span>
+                                            <div class="text-muted small">Клиент ID: {{ order.user_id }}</div>
+                                        </div>
+                                        <span class="badge rounded-pill {% if order.status == 'cooking' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %} px-3 py-2">
+                                            {{ 'Готовится' if order.status == 'cooking' else 'Ожидает' }}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="p-3 bg-white rounded-4 border-2 mb-3">
+                                        <p class="mb-0 text-secondary italic">{{ order.details or "Без уточнения деталей" }}</p>
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        {% if order.status == 'pending' %}
+                                            <a href="{{ url_for('update_order_status', order_id=order.id, new_status='cooking') }}" 
+                                            class="btn btn-primary-grad flex-grow-1 fw-bold py-2">Принять в работу</a>
+                                        {% elif order.status == 'cooking' %}
+                                            <a href="{{ url_for('update_order_status', order_id=order.id, new_status='ready') }}" 
+                                            class="btn btn-success flex-grow-1 fw-bold py-2">Готово к выдаче</a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="p-5 text-center text-muted">
+                                    <i class="bi bi-check2-all display-4 opacity-25"></i>
+                                    <p class="mt-2">Все заказы приготовлены!</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
 
                 {% else %}
                     <div class="text-center py-5">

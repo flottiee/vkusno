@@ -46,9 +46,11 @@
             <a href="{{ url_for('menu') }}" class="btn btn-outline-primary rounded-4 px-4 py-2 shadow-sm">
                 <i class="bi bi-arrow-left me-2"></i>Продолжить выбор
             </a>
-            <button class="btn btn-primary-grad rounded-4 px-5 py-2 shadow-lg">
-                <i class="bi bi-check2-circle me-2"></i>Оформить заказ
-            </button>
+            <form action="{{ url_for('create_order') }}" method="post">
+                <button type="submit" class="btn btn-primary-grad rounded-4 px-5 py-2 shadow-lg">
+                    <i class="bi bi-check2-circle me-2"></i>Оформить заказ
+                </button>
+            </form>
         </div>
     {% else %}
         <div class="text-center py-5">

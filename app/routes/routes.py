@@ -10,6 +10,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from werkzeug.utils import secure_filename
 
 from app.models.cart import Cart
+from app.models.order import Order 
 from app.models.menu_item import Category, MenuItem
 from instance.data_db import db_session
 from app.models.users import User, RoleRequest
@@ -99,20 +100,25 @@ def setup_routes(app):
         db_sess = db_session.create_session()
         all_requests = []  # Для админа
         user_history = []  # Для пользователя
+        cook_orders = []   # Для повара
 
         if current_user.is_authenticated:
             if current_user.speciality == 'admin':
-                # Админ видит все новые заявки
                 all_requests = db_sess.query(RoleRequest).filter(RoleRequest.status == 'pending').all()
+            
+            elif current_user.speciality == 'cook':
+                # Загружаем заказы, которые нужно готовить (кроме завершенных)
+                cook_orders = db_sess.query(Order).filter(Order.status != 'completed').all()
+            
             else:
-                # Пользователь видит только свои заявки (историю)
                 user_history = db_sess.query(RoleRequest).filter(RoleRequest.user_id == current_user.id).order_by(
                     RoleRequest.created_at.desc()).all()
 
         return render_template("index.html",
                                title="Главная",
                                requests=all_requests,
-                               history=user_history)
+                               history=user_history,
+                               orders=cook_orders) # Обязательно передаем orders
 
     @app.route('/apply_role', methods=['POST'])
     @login_required
@@ -336,6 +342,7 @@ def setup_routes(app):
     @app.route('/update_cart_item', methods=['POST'])
     @login_required_api
     def update_cart_item():
+        
         dish_id = int(request.form.get('dish_id'))
         delta = int(request.form.get('delta'))  # +1 или -1
         db_sess = db_session.create_session()
@@ -371,3 +378,54 @@ def setup_routes(app):
             'cart_total': len(dishes),
             'dish_quantity': remaining_qty
         })
+        
+    @app.route('/create_order', methods=['POST'])
+    @login_required
+    def create_order():
+        db_sess = db_session.create_session()
+        user = db_sess.merge(current_user)
+        cart = user.cart
+
+        if not cart or not cart.content.get('dishes'):
+            flash("Ваша корзина пуста", "warning")
+            return redirect(url_for('menu'))
+
+        # Создаем новый заказ
+        # Убедись, что модель Order импортирована!
+        new_order = Order(
+            user_id=user.id,
+            status='pending',
+            # Сохраняем содержимое корзины как детали заказа
+            details=str(cart.content.get('dishes')), 
+            # Если в модели есть поле для цены:
+            # total_price=cart.content.get('price', 0)
+        )
+        
+        db_sess.add(new_order)
+        
+        # Очищаем корзину после заказа
+        cart.content = {'dishes': [], 'price': 0}
+        flag_modified(cart, 'content')
+        
+        db_sess.commit()
+        flash("Заказ успешно оформлен!", "success")
+        return redirect(url_for('index'))
+
+# ----- COOK ACTIONS ---
+
+    @app.route('/update_order_status/<int:order_id>/<string:new_status>')
+    @login_required
+    def update_order_status(order_id, new_status):
+        if current_user.speciality != 'cook':
+            abort(403)
+            
+        db_sess = db_session.create_session()
+        # Используем .get() вместо .get_or_404, так как у тебя кастомные сессии
+        order = db_sess.query(Order).get(order_id)
+        
+        if not order:
+            abort(404)
+
+        order.status = new_status
+        db_sess.commit()
+        return redirect(url_for('index'))
